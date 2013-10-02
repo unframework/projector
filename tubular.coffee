@@ -9,12 +9,15 @@ tubular = (rootDom, rootView) ->
       if options.length and typeof(options[options.length - 1]) is 'function'
         childView = options.pop()
 
-      for o in options
-        if typeof(o) is 'string'
-          throw 'cannot specify element name twice' if elementName isnt null
-          elementName = o # @todo also parse # and . characters
+      if options.length and typeof(options[0]) is 'string'
+        elementName = options.shift()
 
       childDom = @dom.ownerDocument.createElement(elementName or 'div')
+
+      for o in options
+        for n, v of o
+          childDom.setAttribute n, v
+
       @dom.appendChild(childDom)
 
       if childView
