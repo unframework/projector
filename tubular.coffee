@@ -1,6 +1,13 @@
 
 tubular = (rootDom, rootView) ->
-  viewPrototype =
+  rootViewPrototype =
+    use: (map, childView) ->
+      viewPrototype = {}
+      viewPrototype[n] = v for n, v of map
+      viewPrototype.__proto__ = @__proto__
+
+      invoke viewPrototype, @dom, childView
+
     element: (options...) ->
       childView = null
 
@@ -38,7 +45,7 @@ tubular = (rootDom, rootView) ->
       @dom.appendChild(childDom)
 
       if childView
-        invoke childDom, childView
+        invoke @__proto__, childDom, childView
 
     attr: (setting) ->
       for n, v of setting
@@ -51,7 +58,7 @@ tubular = (rootDom, rootView) ->
       childDom = @dom.ownerDocument.createTextNode(setting)
       @dom.appendChild(childDom)
 
-  invoke = (dom, view) ->
+  invoke = (viewPrototype, dom, view) ->
     viewContext =
       dom: dom
 
@@ -61,4 +68,4 @@ tubular = (rootDom, rootView) ->
 
     undefined # prevent stray output
 
-  invoke rootDom, rootView
+  invoke rootViewPrototype, rootDom, rootView
