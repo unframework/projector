@@ -1,5 +1,5 @@
 
-TodoAppView = (todoApp) ->
+window.TodoAppView = (todoApp) ->
   console.log @sampleValue
 
   @use {

@@ -1,5 +1,5 @@
 
-tubular = (rootDom, rootView) ->
+window.tubular = (rootDom, rootView) ->
   rootViewPrototype =
     use: (map, childView) ->
       viewPrototype = {}

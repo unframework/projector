@@ -3,13 +3,18 @@
   <head>
     <meta charset="utf-8">
     <title>Tubular</title>
-    <script type="text/javascript" src="TodoAppView.js"></script>
-    <script type="text/javascript" src="tubular.js"></script>
+
+    <script type="text/coffeescript" src="TodoAppView.coffee"></script>
+    <script type="text/coffeescript" src="tubular.coffee"></script>
+
+    <script type="text/javascript" src="coffee-script.js"></script>
   </head>
   <body>
     <div id="container"></div>
     <script type="text/javascript">
-        tubular(document.getElementById('container'), TodoAppView)
+        setTimeout(function () {
+            tubular(document.getElementById('container'), TodoAppView)
+        }, 200);
     </script>
   </body>
 </html>
