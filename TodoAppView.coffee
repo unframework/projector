@@ -1,5 +1,5 @@
 
-window.TodoAppView = (todoApp) ->
+window.TodoAppView = ->
   console.log @sampleValue
 
   @extend {
@@ -11,7 +11,7 @@ window.TodoAppView = (todoApp) ->
     @sampleExtension()
 
     @element '.acme-container-box', { role: 'container' }, ->
-      @attr dataTodoItemCount: 3
+      @attr dataTodoItemCount: 'itemCount'
 
       @sampleExtension()
 

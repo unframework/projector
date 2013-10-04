@@ -1,5 +1,5 @@
 
-window.tubular = (rootDom, rootView) ->
+window.tubular = (rootModel, rootDom, rootView) ->
   rootViewPrototype =
     element: (options...) ->
       childView = null
@@ -41,11 +41,12 @@ window.tubular = (rootDom, rootView) ->
         @withDOM childDom, childView
 
     attr: (setting) ->
-      for n, v of setting
+      for n, path of setting
         snakeCaseName = n.replace /[a-z][A-Z]/g, (a) ->
           a[0] + '-' + a[1].toLowerCase()
 
-        @dom.setAttribute snakeCaseName, v
+        @get path, (v) ->
+          @dom.setAttribute snakeCaseName, v
 
     text: (setting) ->
       childDom = @dom.ownerDocument.createTextNode(setting)
