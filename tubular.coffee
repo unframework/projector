@@ -1,13 +1,6 @@
 
 window.tubular = (rootDom, rootView) ->
   rootViewPrototype =
-    use: (map, childView) ->
-      viewPrototype = {}
-      viewPrototype[n] = v for n, v of map
-      viewPrototype.__proto__ = @__proto__
-
-      invoke viewPrototype, @dom, childView
-
     element: (options...) ->
       childView = null
 
@@ -45,7 +38,7 @@ window.tubular = (rootDom, rootView) ->
       @dom.appendChild(childDom)
 
       if childView
-        invoke @__proto__, childDom, childView
+        @withDOM childDom, childView
 
     attr: (setting) ->
       for n, v of setting
@@ -58,9 +51,20 @@ window.tubular = (rootDom, rootView) ->
       childDom = @dom.ownerDocument.createTextNode(setting)
       @dom.appendChild(childDom)
 
-  invoke = (viewPrototype, dom, view) ->
+  invoke = (viewPrototype, viewDOM, view) ->
     viewContext =
-      dom: dom
+      dom: viewDOM
+
+      extend: (map, init) ->
+        # copy the prototype into a clean object
+        newPrototype = {}
+        newPrototype[n] = v for n, v of map
+        newPrototype.__proto__ = viewPrototype
+
+        invoke newPrototype, viewDOM, init
+
+      withDOM: (newDOM, init) ->
+        invoke viewPrototype, newDOM, init
 
     viewContext.__proto__ = viewPrototype
 
