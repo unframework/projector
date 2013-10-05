@@ -1,5 +1,5 @@
 
-window.tubular = (rootModel, rootDom, rootView) ->
+window.tubular = (rootModel, rootDom, rootTemplate) ->
   rootViewPrototype =
     element: (options...) ->
       childView = null
@@ -54,22 +54,22 @@ window.tubular = (rootModel, rootDom, rootView) ->
 
   watchList = []
 
-  invoke = (model, viewPrototype, viewDOM, view) ->
-    viewContext =
+  runTemplate = (model, viewPrototype, viewDOM, template) ->
+    viewModel =
       dom: viewDOM
 
-      extend: (map, init) ->
+      extend: (map, subTemplate) ->
         # copy the prototype into a clean object
         newPrototype = {}
         newPrototype[n] = v for n, v of map
         newPrototype.__proto__ = viewPrototype
 
-        invoke model, newPrototype, viewDOM, init
+        runTemplate model, newPrototype, viewDOM, subTemplate
 
-      withDOM: (newDOM, init) ->
-        invoke model, viewPrototype, newDOM, init
+      withDOM: (newDOM, subTemplate) ->
+        runTemplate model, viewPrototype, newDOM, subTemplate
 
-      with: (path, init) ->
+      with: (path, subTemplate) ->
         value = model[path]
 
         watchList.push ->
@@ -77,14 +77,14 @@ window.tubular = (rootModel, rootDom, rootView) ->
           newValue = model[path]
           if newValue isnt value
             value = newValue
-            invoke value, viewPrototype, viewDOM, init
+            runTemplate value, viewPrototype, viewDOM, subTemplate
 
-        invoke value, viewPrototype, viewDOM, init
+        runTemplate value, viewPrototype, viewDOM, subTemplate
 
-    viewContext.__proto__ = viewPrototype
+    viewModel.__proto__ = viewPrototype
 
-    view.call(viewContext, model)
+    template.call(viewModel, model)
 
     undefined # prevent stray output
 
-  invoke rootModel, rootViewPrototype, rootDom, rootView
+  runTemplate rootModel, rootViewPrototype, rootDom, rootTemplate
