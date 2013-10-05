@@ -103,3 +103,50 @@ window.tubularHtml = (viewModel, onRootElement) ->
             startNode.parentNode.removeChild startNode.nextSibling # @todo optimize using local vars
 
         currentCondition = condition
+
+  # @todo we can't overthink the array state diff tracking logic (e.g. "item inserted" or "item removed")
+  # because ultimately, that sort of event information should come from the model itself
+  # e.g. to fade out a spliced-out element of a list should really involve just creating *new* "flash" DOM
+  # just to show the fadeout animation instead of reusing a piece of DOM from the original list
+  # doing too much guessing otherwise would trip up on cases where item content just changed and "seems" as if something
+  # was removed but actually wasn't
+  viewModel.each = (subTemplate) ->
+    currentDom = @$tubularHtmlCursor()
+    endNode = currentDom.ownerDocument.createComment('...')
+    items = []
+
+    @$tubularHtmlCursor endNode
+
+    loopCursor = createState(currentDom, endNode)
+
+    createItemSlot = (index) =>
+      itemStartNode = currentDom.ownerDocument.createComment('^[]')
+      itemEndNode = currentDom.ownerDocument.createComment('$[]')
+      loopCursor itemStartNode
+      loopCursor itemEndNode
+
+      @fork { $tubularHtmlCursor: createState(currentDom, itemEndNode) }, ->
+        @with index, (v) ->
+          # clear old dom
+          while itemStartNode.nextSibling isnt itemEndNode
+            currentDom.removeChild(itemStartNode.nextSibling)
+
+          subTemplate.call(this, v)
+
+      # provide a cleanup callback
+      () ->
+        while itemStartNode.nextSibling isnt itemEndNode
+          currentDom.removeChild(itemStartNode.nextSibling)
+        currentDom.removeChild(itemStartNode)
+        currentDom.removeChild(itemEndNode)
+
+    @with 'length', (length) ->
+      # add items
+      while items.length < length
+        items.push createItemSlot(items.length)
+
+      # remove items
+      while items.length > length
+        itemCleanup = items.pop()
+        itemCleanup()
+

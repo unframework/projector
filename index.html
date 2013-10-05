@@ -15,10 +15,13 @@
     <script type="text/javascript">
         setTimeout(function () {
             tubular({
-              itemCount: 4,
-              updateItemCount: function () {
+              itemList: [],
+              addItem: function () {
                 console.log('updatin\'!')
-                this.itemCount = Math.round(Math.random() * 3);
+                this.itemList.push('item' + Math.round(Math.random() * 300));
+              },
+              removeItem: function () {
+                this.itemList.shift();
               }
             }, TodoAppTemplate)
         }, 200);

@@ -8,11 +8,20 @@ window.TodoAppTemplate = ->
   @element '.acme-container-box', { role: 'container' }, ->
     @attr dataTodoItemCount: 'itemCount'
 
-    @when 'itemCount', ->
-      @element 'h1#sampleHeading', ->
-        @text 'Hello, world'
+    @with 'itemList', ->
+      @when 'length', ->
+        @element 'h1#sampleHeading', ->
+          @text 'Hello, world'
+
+      @element 'ul', ->
+        @each ->
+          @element 'li', ->
+            @text 'Hello, world'
 
     @element 'a', { href: '#' }, ->
-      @text 'Click me!'
+      @text 'Add Item'
+      @onClick 'addItem'
 
-      @onClick 'updateItemCount'
+    @element 'a', { href: '#' }, ->
+      @text 'Remove Item'
+      @onClick 'removeItem'
