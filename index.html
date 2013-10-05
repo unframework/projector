@@ -14,7 +14,13 @@
     <div id="container"></div>
     <script type="text/javascript">
         setTimeout(function () {
-            tubular({ itemCount: 4 }, document.getElementById('container'), TodoAppTemplate)
+            tubular({
+              itemCount: 4,
+              updateItemCount: function () {
+                console.log('updatin\'!')
+                this.itemCount = Math.round(Math.random() * 10);
+              }
+            }, document.getElementById('container'), TodoAppTemplate)
         }, 200);
     </script>
   </body>

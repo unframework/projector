@@ -50,3 +50,15 @@ window.tubularHtml =
   text: (setting) ->
     childDom = @dom.ownerDocument.createTextNode(setting)
     @dom.appendChild(childDom)
+
+  onClick: (path) ->
+    currentAction = null
+
+    @dom.addEventListener 'click', =>
+      if typeof currentAction is 'function'
+        @apply currentAction
+    , false
+
+    @with path, (action) ->
+      # @todo a cleanup conditional?
+      currentAction = action

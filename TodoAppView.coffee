@@ -9,3 +9,8 @@ window.TodoAppTemplate = ->
 
       @element 'h1#sampleHeading', ->
         @text 'Hello, world'
+
+      @element 'a', { href: '#' }, ->
+        @text 'Click me!'
+
+        @onClick 'updateItemCount'
