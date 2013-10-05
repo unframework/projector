@@ -1,9 +1,18 @@
 
+# @todo obviously encapsulate
+insertNode = (node, dom, trailer) ->
+  if trailer
+    dom.insertBefore(node, trailer)
+  else
+    dom.appendChild(node)
+
+
 window.tubularHtml =
   element: (options...) ->
     # @todo get the container from somewhere (have an "origin" function that seeds view-model state)
     # @todo store HTML-specific view-model state as an object in a single '$tubularHtml' property or something
     dom = if @currentDom then @currentDom else document.getElementById('container')
+    trailer = @currentTrailer
 
     subTemplate = null
 
@@ -38,10 +47,10 @@ window.tubularHtml =
       for n, v of o
         childDom.setAttribute n, v
 
-    dom.appendChild(childDom)
+    insertNode childDom, dom, trailer
 
     if subTemplate
-      @fork { currentDom: childDom }, subTemplate
+      @fork { currentDom: childDom, currentTrailer: null }, subTemplate
 
   attr: (setting) ->
     for n, path of setting
@@ -53,7 +62,7 @@ window.tubularHtml =
 
   text: (setting) ->
     childDom = @currentDom.ownerDocument.createTextNode(setting)
-    @currentDom.appendChild(childDom)
+    insertNode childDom, @currentDom, @currentTrailer
 
   onClick: (path) ->
     currentAction = null
@@ -72,19 +81,20 @@ window.tubularHtml =
     currentCondition = null # not true/false to always trigger first run
 
     startNode = @currentDom.ownerDocument.createComment('^' + path);
-    @currentDom.appendChild(startNode)
+    insertNode startNode, @currentDom, @currentTrailer
+
+    endNode = @currentDom.ownerDocument.createComment('$' + path);
+    insertNode endNode, @currentDom, @currentTrailer
 
     @with path, (v) ->
       condition = !!v # coerce to boolean
 
       if currentCondition isnt condition
         if condition
-          subTemplate.call(self)
+          # forking the original view-model, since this one is based around the condition model value
+          self.fork { currentDom: @currentDom, currentTrailer: endNode }, subTemplate
         else
           while startNode.nextSibling isnt endNode
             startNode.parentNode.removeChild startNode.nextSibling # @todo optimize using local vars
 
         currentCondition = condition
-
-    endNode = @currentDom.ownerDocument.createComment('$' + path);
-    @currentDom.appendChild(endNode)
