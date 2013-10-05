@@ -45,14 +45,16 @@ window.tubular = (rootModel, rootDom, rootView) ->
         snakeCaseName = n.replace /[a-z][A-Z]/g, (a) ->
           a[0] + '-' + a[1].toLowerCase()
 
-        @get path, (v) ->
+        @with path, (v) ->
           @dom.setAttribute snakeCaseName, v
 
     text: (setting) ->
       childDom = @dom.ownerDocument.createTextNode(setting)
       @dom.appendChild(childDom)
 
-  invoke = (viewPrototype, viewDOM, view) ->
+  watchList = []
+
+  invoke = (model, viewPrototype, viewDOM, view) ->
     viewContext =
       dom: viewDOM
 
@@ -62,15 +64,27 @@ window.tubular = (rootModel, rootDom, rootView) ->
         newPrototype[n] = v for n, v of map
         newPrototype.__proto__ = viewPrototype
 
-        invoke newPrototype, viewDOM, init
+        invoke model, newPrototype, viewDOM, init
 
       withDOM: (newDOM, init) ->
-        invoke viewPrototype, newDOM, init
+        invoke model, viewPrototype, newDOM, init
+
+      with: (path, init) ->
+        value = model[path]
+
+        watchList.push ->
+          # get and compare with cached values
+          newValue = model[path]
+          if newValue isnt value
+            value = newValue
+            invoke value, viewPrototype, viewDOM, init
+
+        invoke value, viewPrototype, viewDOM, init
 
     viewContext.__proto__ = viewPrototype
 
-    view.apply(viewContext)
+    view.call(viewContext, model)
 
     undefined # prevent stray output
 
-  invoke rootViewPrototype, rootDom, rootView
+  invoke rootModel, rootViewPrototype, rootDom, rootView

@@ -1,5 +1,5 @@
 
-window.TodoAppView = ->
+window.TodoAppTemplate = ->
   console.log @sampleValue
 
   @extend {
