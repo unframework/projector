@@ -8,15 +8,15 @@ window.TodoAppTemplate = ->
   @element '.acme-container-box', { role: 'container' }, ->
     @attr dataTodoItemCount: 'itemCount'
 
-    @with 'itemList', ->
+    @bind 'itemList', ->
       @when 'length', ->
         @element 'h1#sampleHeading', ->
           @text 'Hello, world'
 
       @element 'ul', ->
-        @each ->
+        @each (item) ->
           @element 'li', ->
-            @text 'Hello, world'
+            @text 'This is: ' + item
 
     @element 'a', { href: '#' }, ->
       @text 'Add Item'

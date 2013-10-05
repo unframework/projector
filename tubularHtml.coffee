@@ -60,7 +60,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
       snakeCaseName = n.replace /[a-z][A-Z]/g, (a) ->
         a[0] + '-' + a[1].toLowerCase()
 
-      @with path, (v) ->
+      @bind path, (v) ->
         @$tubularHtmlCursor().setAttribute snakeCaseName, v
 
   viewModel.text = (setting) ->
@@ -75,7 +75,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
         @apply currentAction
     , false
 
-    @with path, (action) ->
+    @bind path, (action) ->
       # @todo a cleanup conditional?
       currentAction = action
 
@@ -91,7 +91,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
     @$tubularHtmlCursor startNode
     @$tubularHtmlCursor endNode
 
-    @with path, (v) ->
+    @bind path, (v) ->
       condition = !!v # coerce to boolean
 
       if currentCondition isnt condition
@@ -128,7 +128,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
       isRemoved = false
 
       @fork { $tubularHtmlCursor: createState(currentDom, itemEndNode) }, ->
-        @with index, (v, unwatch) ->
+        @bind index, (v, unwatch) ->
           if isRemoved
             # prevent further watch callbacks
             unwatch()
@@ -151,7 +151,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
         currentDom.removeChild(itemStartNode)
         currentDom.removeChild(itemEndNode)
 
-    @with 'length', (length) ->
+    @bind 'length', (length) ->
       # add items
       while items.length < length
         items.push createItemSlot(items.length)

@@ -8,7 +8,7 @@ window.tubular = (rootModel, rootTemplate) ->
         # create clean sub-view model and initialize it with given values
         runTemplate model, viewModel, subTemplate, map
 
-      with: (path, subTemplate) ->
+      bind: (path, subTemplate) ->
         value = model[path]
 
         watchList.push (unwatch) ->
