@@ -1,17 +1,18 @@
 
 window.TodoAppTemplate = ->
-  console.log @sampleValue
+  window.tubularHtml this, (element) ->
+    # immediately append
+    # @todo this could be saved for later appending elsewhere, too
+    document.getElementById('container').appendChild(element)
 
-  @fork window.tubularHtml, ->
+  @element '.acme-container-box', { role: 'container' }, ->
+    @attr dataTodoItemCount: 'itemCount'
 
-    @element '.acme-container-box', { role: 'container' }, ->
-      @attr dataTodoItemCount: 'itemCount'
+    @when 'itemCount', ->
+      @element 'h1#sampleHeading', ->
+        @text 'Hello, world'
 
-      @when 'itemCount', ->
-        @element 'h1#sampleHeading', ->
-          @text 'Hello, world'
+    @element 'a', { href: '#' }, ->
+      @text 'Click me!'
 
-      @element 'a', { href: '#' }, ->
-        @text 'Click me!'
-
-        @onClick 'updateItemCount'
+      @onClick 'updateItemCount'

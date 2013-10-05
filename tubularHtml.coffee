@@ -1,18 +1,17 @@
 
-# @todo obviously encapsulate
-createState = (dom, trailer) ->
-  # the state is a closure that normally returns the current context DOM, or inserts a child node if one is given
-  (node) ->
-    if node
-      if trailer then dom.insertBefore(node, trailer) else dom.appendChild(node)
-    else
-      dom
+window.tubularHtml = (viewModel, onRootElement) ->
+  # defensive check
+  throw 'must supply root element callback' if typeof onRootElement isnt 'function'
 
-window.tubularHtml =
-  # @todo get the container from somewhere
-  $tubularHtmlCursor: createState document.getElementById('container')
+  createState = (dom, trailer) ->
+    # the state is a closure that normally returns the current context DOM, or inserts a child node if one is given
+    (node) ->
+      if node
+        if trailer then dom.insertBefore(node, trailer) else dom.appendChild(node)
+      else
+        dom
 
-  element: (options...) ->
+  viewModel.element = (options...) ->
     subTemplate = null
 
     elementName = null
@@ -34,7 +33,8 @@ window.tubularHtml =
 
         '' # strip suffix from original name
 
-    childDom = @$tubularHtmlCursor().ownerDocument.createElement(elementName or 'div')
+    ownerDocument = if @$tubularHtmlCursor then @$tubularHtmlCursor().ownerDocument else document
+    childDom = ownerDocument.createElement(elementName or 'div')
 
     if elementId isnt null # still trigger for empty ID string
       childDom.setAttribute 'id', elementId
@@ -46,12 +46,16 @@ window.tubularHtml =
       for n, v of o
         childDom.setAttribute n, v
 
-    @$tubularHtmlCursor childDom
+    # if first element ever created, report it for external consumption, otherwise just append
+    if @$tubularHtmlCursor
+      @$tubularHtmlCursor childDom
+    else
+      onRootElement childDom
 
     if subTemplate
       @fork { $tubularHtmlCursor: createState(childDom) }, subTemplate
 
-  attr: (setting) ->
+  viewModel.attr = (setting) ->
     for n, path of setting
       snakeCaseName = n.replace /[a-z][A-Z]/g, (a) ->
         a[0] + '-' + a[1].toLowerCase()
@@ -59,11 +63,11 @@ window.tubularHtml =
       @with path, (v) ->
         @$tubularHtmlCursor().setAttribute snakeCaseName, v
 
-  text: (setting) ->
+  viewModel.text = (setting) ->
     childDom = @$tubularHtmlCursor().ownerDocument.createTextNode(setting)
     @$tubularHtmlCursor childDom
 
-  onClick: (path) ->
+  viewModel.onClick = (path) ->
     currentAction = null
 
     @$tubularHtmlCursor().addEventListener 'click', =>
@@ -75,7 +79,7 @@ window.tubularHtml =
       # @todo a cleanup conditional?
       currentAction = action
 
-  when: (path, subTemplate) ->
+  viewModel.when = (path, subTemplate) ->
     self = this
     currentCondition = null # not true/false to always trigger first run
 
