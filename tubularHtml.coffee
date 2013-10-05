@@ -1,6 +1,10 @@
 
 window.tubularHtml =
   element: (options...) ->
+    # @todo get the container from somewhere (have an "origin" function that seeds view-model state)
+    # @todo store HTML-specific view-model state as an object in a single '$tubularHtml' property or something
+    dom = if @currentDom then @currentDom else document.getElementById('container')
+
     subTemplate = null
 
     elementName = null
@@ -22,7 +26,7 @@ window.tubularHtml =
 
         '' # strip suffix from original name
 
-    childDom = @dom.ownerDocument.createElement(elementName or 'div')
+    childDom = dom.ownerDocument.createElement(elementName or 'div')
 
     if elementId isnt null # still trigger for empty ID string
       childDom.setAttribute 'id', elementId
@@ -34,10 +38,10 @@ window.tubularHtml =
       for n, v of o
         childDom.setAttribute n, v
 
-    @dom.appendChild(childDom)
+    dom.appendChild(childDom)
 
     if subTemplate
-      @withDOM childDom, subTemplate
+      @fork { currentDom: childDom }, subTemplate
 
   attr: (setting) ->
     for n, path of setting
@@ -45,16 +49,16 @@ window.tubularHtml =
         a[0] + '-' + a[1].toLowerCase()
 
       @with path, (v) ->
-        @dom.setAttribute snakeCaseName, v
+        @currentDom.setAttribute snakeCaseName, v
 
   text: (setting) ->
-    childDom = @dom.ownerDocument.createTextNode(setting)
-    @dom.appendChild(childDom)
+    childDom = @currentDom.ownerDocument.createTextNode(setting)
+    @currentDom.appendChild(childDom)
 
   onClick: (path) ->
     currentAction = null
 
-    @dom.addEventListener 'click', =>
+    @currentDom.addEventListener 'click', =>
       if typeof currentAction is 'function'
         @apply currentAction
     , false
@@ -67,8 +71,8 @@ window.tubularHtml =
     self = this
     currentCondition = null # not true/false to always trigger first run
 
-    startNode = @dom.ownerDocument.createComment('^' + path);
-    @dom.appendChild(startNode)
+    startNode = @currentDom.ownerDocument.createComment('^' + path);
+    @currentDom.appendChild(startNode)
 
     @with path, (v) ->
       condition = !!v # coerce to boolean
@@ -82,5 +86,5 @@ window.tubularHtml =
 
         currentCondition = condition
 
-    endNode = @dom.ownerDocument.createComment('$' + path);
-    @dom.appendChild(endNode)
+    endNode = @currentDom.ownerDocument.createComment('$' + path);
+    @currentDom.appendChild(endNode)

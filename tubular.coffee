@@ -1,21 +1,12 @@
 
-window.tubular = (rootModel, rootDom, rootTemplate) ->
+window.tubular = (rootModel, rootTemplate) ->
   watchList = []
 
-  runTemplate = (model, viewPrototype, viewDOM, template) ->
+  runTemplate = (model, viewPrototype, template, preInitMap) ->
     viewModel =
-      dom: viewDOM
-
-      use: (map, subTemplate) ->
-        # copy the prototype into a clean object
-        newPrototype = {}
-        newPrototype[n] = v for n, v of map
-        newPrototype.__proto__ = viewPrototype
-
-        runTemplate model, newPrototype, viewDOM, subTemplate
-
-      withDOM: (newDOM, subTemplate) ->
-        runTemplate model, viewPrototype, newDOM, subTemplate
+      fork: (map, subTemplate) ->
+        # create clean sub-view model and initialize it with given values
+        runTemplate model, viewModel, subTemplate, map
 
       with: (path, subTemplate) ->
         value = model[path]
@@ -25,9 +16,9 @@ window.tubular = (rootModel, rootDom, rootTemplate) ->
           newValue = model[path]
           if newValue isnt value
             value = newValue
-            runTemplate value, viewPrototype, viewDOM, subTemplate
+            runTemplate value, viewModel, subTemplate
 
-        runTemplate value, viewPrototype, viewDOM, subTemplate
+        runTemplate value, viewModel, subTemplate
 
       apply: (run) ->
         # fail fast on error
@@ -42,10 +33,13 @@ window.tubular = (rootModel, rootDom, rootTemplate) ->
         # @todo also, this should be safe WRT in-flight changes to the watchList
         watch() for watch in watchList
 
+    if preInitMap
+      viewModel[n] = v for n, v of preInitMap
+
     viewModel.__proto__ = viewPrototype
 
     template.call(viewModel, model)
 
     undefined # prevent stray output
 
-  runTemplate rootModel, {}, rootDom, rootTemplate
+  runTemplate rootModel, Object.prototype, rootTemplate
