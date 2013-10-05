@@ -11,12 +11,13 @@ window.tubular = (rootModel, rootTemplate) ->
       with: (path, subTemplate) ->
         value = model[path]
 
-        watchList.push ->
+        watchList.push (unwatch) ->
           # get and compare with cached values
           newValue = model[path]
           if newValue isnt value
             value = newValue
-            runTemplate value, viewModel, subTemplate
+            runTemplate value, viewModel, (m) ->
+              subTemplate.call(this, m, unwatch)
 
         runTemplate value, viewModel, subTemplate
 
@@ -28,10 +29,24 @@ window.tubular = (rootModel, rootTemplate) ->
         # @todo wrap in an try/catch? or just let it bubble up?
         run.call(model)
 
-        # update watches
+        # invoke watches and cull ones that request to be removed
         # @todo surely, this should be wrapped in try/catch
-        # @todo also, this should be safe WRT in-flight changes to the watchList
-        watch() for watch in watchList
+        unwatchFlag = null
+        unwatchCallback = ->
+          unwatchFlag = true
+
+        watchCount = watchList.length
+        watchIndex = 0
+
+        while watchIndex < watchCount
+          unwatchFlag = false
+          watchList[watchIndex](unwatchCallback)
+
+          if unwatchFlag
+            watchList.splice(watchIndex, 1)
+            watchCount -= 1
+          else
+            watchIndex += 1
 
     if preInitMap
       viewModel[n] = v for n, v of preInitMap
