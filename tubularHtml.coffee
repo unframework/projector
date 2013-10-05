@@ -129,22 +129,27 @@ window.tubularHtml = (viewModel, onRootElement) ->
 
       @fork { $tubularHtmlCursor: createState(currentDom, itemEndNode) }, ->
         @with index, (v, unwatch) ->
-          # clear old dom
-          while itemStartNode.nextSibling isnt itemEndNode
-            currentDom.removeChild(itemStartNode.nextSibling)
-
           if isRemoved
-            currentDom.removeChild(itemStartNode)
-            currentDom.removeChild(itemEndNode)
-
+            # prevent further watch callbacks
             unwatch()
 
           else
+            # clear old dom
+            while itemStartNode.nextSibling isnt itemEndNode
+              currentDom.removeChild(itemStartNode.nextSibling)
+
             subTemplate.call(this, v)
 
       # provide a cleanup callback
       () ->
         isRemoved = true
+
+        # clean up DOM immediately
+        while itemStartNode.nextSibling isnt itemEndNode
+          currentDom.removeChild(itemStartNode.nextSibling)
+
+        currentDom.removeChild(itemStartNode)
+        currentDom.removeChild(itemEndNode)
 
     @with 'length', (length) ->
       # add items
