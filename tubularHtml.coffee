@@ -1,14 +1,14 @@
 
 window.tubularHtml =
   element: (options...) ->
-    childView = null
+    subTemplate = null
 
     elementName = null
     elementId = null
     elementClassList = []
 
     if options.length and typeof(options[options.length - 1]) is 'function'
-      childView = options.pop()
+      subTemplate = options.pop()
 
     if options.length and typeof(options[0]) is 'string'
       elementName = options.shift()
@@ -36,8 +36,8 @@ window.tubularHtml =
 
     @dom.appendChild(childDom)
 
-    if childView
-      @withDOM childDom, childView
+    if subTemplate
+      @withDOM childDom, subTemplate
 
   attr: (setting) ->
     for n, path of setting
@@ -62,3 +62,25 @@ window.tubularHtml =
     @with path, (action) ->
       # @todo a cleanup conditional?
       currentAction = action
+
+  when: (path, subTemplate) ->
+    self = this
+    currentCondition = null # not true/false to always trigger first run
+
+    startNode = @dom.ownerDocument.createComment('^' + path);
+    @dom.appendChild(startNode)
+
+    @with path, (v) ->
+      condition = !!v # coerce to boolean
+
+      if currentCondition isnt condition
+        if condition
+          subTemplate.call(self)
+        else
+          while startNode.nextSibling isnt endNode
+            startNode.parentNode.removeChild startNode.nextSibling # @todo optimize using local vars
+
+        currentCondition = condition
+
+    endNode = @dom.ownerDocument.createComment('$' + path);
+    @dom.appendChild(endNode)
