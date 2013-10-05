@@ -1,19 +1,18 @@
 
 # @todo obviously encapsulate
-insertNode = (node, dom, trailer) ->
-  if trailer
-    dom.insertBefore(node, trailer)
-  else
-    dom.appendChild(node)
-
+createState = (dom, trailer) ->
+  # the state is a closure that normally returns the current context DOM, or inserts a child node if one is given
+  (node) ->
+    if node
+      if trailer then dom.insertBefore(node, trailer) else dom.appendChild(node)
+    else
+      dom
 
 window.tubularHtml =
-  element: (options...) ->
-    # @todo get the container from somewhere (have an "origin" function that seeds view-model state)
-    # @todo store HTML-specific view-model state as an object in a single '$tubularHtml' property or something
-    dom = if @currentDom then @currentDom else document.getElementById('container')
-    trailer = @currentTrailer
+  # @todo get the container from somewhere
+  $tubularHtmlCursor: createState document.getElementById('container')
 
+  element: (options...) ->
     subTemplate = null
 
     elementName = null
@@ -35,7 +34,7 @@ window.tubularHtml =
 
         '' # strip suffix from original name
 
-    childDom = dom.ownerDocument.createElement(elementName or 'div')
+    childDom = @$tubularHtmlCursor().ownerDocument.createElement(elementName or 'div')
 
     if elementId isnt null # still trigger for empty ID string
       childDom.setAttribute 'id', elementId
@@ -47,10 +46,10 @@ window.tubularHtml =
       for n, v of o
         childDom.setAttribute n, v
 
-    insertNode childDom, dom, trailer
+    @$tubularHtmlCursor childDom
 
     if subTemplate
-      @fork { currentDom: childDom, currentTrailer: null }, subTemplate
+      @fork { $tubularHtmlCursor: createState(childDom) }, subTemplate
 
   attr: (setting) ->
     for n, path of setting
@@ -58,16 +57,16 @@ window.tubularHtml =
         a[0] + '-' + a[1].toLowerCase()
 
       @with path, (v) ->
-        @currentDom.setAttribute snakeCaseName, v
+        @$tubularHtmlCursor().setAttribute snakeCaseName, v
 
   text: (setting) ->
-    childDom = @currentDom.ownerDocument.createTextNode(setting)
-    insertNode childDom, @currentDom, @currentTrailer
+    childDom = @$tubularHtmlCursor().ownerDocument.createTextNode(setting)
+    @$tubularHtmlCursor childDom
 
   onClick: (path) ->
     currentAction = null
 
-    @currentDom.addEventListener 'click', =>
+    @$tubularHtmlCursor().addEventListener 'click', =>
       if typeof currentAction is 'function'
         @apply currentAction
     , false
@@ -80,11 +79,13 @@ window.tubularHtml =
     self = this
     currentCondition = null # not true/false to always trigger first run
 
-    startNode = @currentDom.ownerDocument.createComment('^' + path);
-    insertNode startNode, @currentDom, @currentTrailer
+    currentDom = @$tubularHtmlCursor()
 
-    endNode = @currentDom.ownerDocument.createComment('$' + path);
-    insertNode endNode, @currentDom, @currentTrailer
+    startNode = currentDom.ownerDocument.createComment('^' + path)
+    endNode = currentDom.ownerDocument.createComment('$' + path)
+
+    @$tubularHtmlCursor startNode
+    @$tubularHtmlCursor endNode
 
     @with path, (v) ->
       condition = !!v # coerce to boolean
@@ -92,7 +93,7 @@ window.tubularHtml =
       if currentCondition isnt condition
         if condition
           # forking the original view-model, since this one is based around the condition model value
-          self.fork { currentDom: @currentDom, currentTrailer: endNode }, subTemplate
+          self.fork { $tubularHtmlCursor: createState(currentDom, endNode) }, subTemplate
         else
           while startNode.nextSibling isnt endNode
             startNode.parentNode.removeChild startNode.nextSibling # @todo optimize using local vars
