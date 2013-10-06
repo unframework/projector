@@ -67,6 +67,18 @@ window.tubularHtml = (viewModel, onRootElement) ->
     childDom = @$tubularHtmlCursor().ownerDocument.createTextNode(setting)
     @$tubularHtmlCursor childDom
 
+  viewModel.show = (path) ->
+    textNode = null
+
+    @bind path, (text) ->
+      if textNode
+        newNode = textNode.ownerDocument.createTextNode(text)
+        textNode.parentNode.replaceChild(newNode, textNode)
+        textNode = newNode
+      else
+        textNode = @$tubularHtmlCursor().ownerDocument.createTextNode(text)
+        @$tubularHtmlCursor textNode
+
   viewModel.onClick = (path) ->
     currentAction = null
 

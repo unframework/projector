@@ -12,6 +12,7 @@ window.TodoAppTemplate = ->
       @when 'length', ->
         @element 'h1#sampleHeading', ->
           @text 'Hello, world'
+          @show 'length'
 
       @element 'ul', ->
         @each (item) ->
