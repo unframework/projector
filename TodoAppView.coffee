@@ -11,28 +11,26 @@ window.TodoAppTemplate = ->
     @bind 'itemList', ->
       @when 'length', ->
         @element 'h1#sampleHeading', ->
-          @staticText 'Hello, world'
-          @text 'length'
+          @text 'Hello, world {{ length }}'
 
         @element 'ul', ->
           @each ->
             @element 'li', ->
-              @staticText 'This is: '
-              @text 'label'
+              @text 'This is: {{ label }}'
 
               @element 'a', { href: '#' }, ->
-                @staticText 'Update Me'
+                @text 'Update Me'
                 @onClick 'update'
 
 
     @element 'a', { href: '#' }, ->
-      @staticText 'Add Item'
+      @text 'Add Item'
       @onClick 'addItem'
 
     @element 'a', { href: '#' }, ->
-      @staticText 'Update Item'
+      @text 'Update Item'
       @onClick 'updateItem'
 
     @element 'a', { href: '#' }, ->
-      @staticText 'Remove Item'
+      @text 'Remove Item'
       @onClick 'removeItem'

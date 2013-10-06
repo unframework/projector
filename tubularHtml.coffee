@@ -24,6 +24,36 @@ window.tubularHtml = (viewModel, onRootElement) ->
       else
         dom
 
+  bindCurlyString = (view, curlyString, display) ->
+    slices = []
+
+    createBinding = (sliceIndex, path) ->
+      binding = view.bind path, (v) ->
+        # @todo don't fire spurious displays while constructing? this is not efficient anyway
+        slices[sliceIndex] = v
+        display slices.join('')
+
+      view.$tubularHtmlOnDestroy ->
+        binding.clear()
+
+    # parse static/dynamic string slices and create bindings along the way
+    re = /{{\s*(.*?)\s*}}/g
+    lastEnd = 0
+    while match = re.exec(curlyString)
+      if match.index > lastEnd
+        slices.push curlyString.substring lastEnd, match.index
+
+      slices.push null
+      createBinding slices.length - 1, match[1]
+
+      lastEnd = match.index + match[0].length
+
+    if curlyString.length > lastEnd
+      slices.push curlyString.substring lastEnd, curlyString.length
+
+    # initial display
+    display slices.join('')
+
   viewModel.element = (options...) ->
     subTemplate = null
 
@@ -83,14 +113,10 @@ window.tubularHtml = (viewModel, onRootElement) ->
       @$tubularHtmlOnDestroy ->
         binding.clear()
 
-  viewModel.staticText = (text) ->
-    ownerDocument = @$tubularHtmlCursor().ownerDocument
-    @$tubularHtmlCursor ownerDocument.createTextNode(text)
-
-  viewModel.text = (path) ->
+  viewModel.text = (curlyString) ->
     textNode = null
 
-    binding = @bind path, (text) ->
+    bindCurlyString this, curlyString, (text) =>
       if textNode
         newNode = textNode.ownerDocument.createTextNode(text)
         textNode.parentNode.replaceChild(newNode, textNode)
@@ -98,10 +124,6 @@ window.tubularHtml = (viewModel, onRootElement) ->
       else
         textNode = @$tubularHtmlCursor().ownerDocument.createTextNode(text)
         @$tubularHtmlCursor textNode
-
-    # clear binding when destroying
-    @$tubularHtmlOnDestroy ->
-      binding.clear()
 
   viewModel.onClick = (path) ->
     currentDom = @$tubularHtmlCursor()
