@@ -22,3 +22,7 @@ Opinions:
   * data flow: *input* -> *model* -> *view*
   * but of course *input* and *view* are closely intertwined as part of the presentation layer
   * this includes AJAX
+
+Minor clarifications:
+
+* there is no such core concept as "destructor" for a view - the DOM-specific logic introduces a concept of "no longer relevant" and implements the corresponding unwatching conditions
