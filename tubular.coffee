@@ -29,6 +29,10 @@ window.tubular = (rootModel, rootTemplate) ->
         # create clean sub-view model and initialize it with given values
         runTemplate model, viewModel, subTemplate, map
 
+      get: (path) ->
+        # @todo this could be optimized but should happen rarely anyway
+        createGetter(model, path)()
+
       bind: (path, subTemplate) ->
         getter = createGetter model, path
         value = getter()
