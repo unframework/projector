@@ -15,13 +15,23 @@ window.TodoAppTemplate = ->
           @text 'length'
 
         @element 'ul', ->
-          @each (item) ->
+          @each ->
             @element 'li', ->
-              @staticText 'This is: ' + item
+              @staticText 'This is: '
+              @text 'label'
+
+              @element 'a', { href: '#' }, ->
+                @staticText 'Update Me'
+                @onClick 'update'
+
 
     @element 'a', { href: '#' }, ->
       @staticText 'Add Item'
       @onClick 'addItem'
+
+    @element 'a', { href: '#' }, ->
+      @staticText 'Update Item'
+      @onClick 'updateItem'
 
     @element 'a', { href: '#' }, ->
       @staticText 'Remove Item'

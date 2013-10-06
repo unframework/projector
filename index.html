@@ -18,10 +18,14 @@
               itemList: [],
               addItem: function () {
                 console.log('updatin\'!')
-                this.itemList.push('item' + Math.round(Math.random() * 300));
+                this.itemList.push({ label: 'item' + Math.round(Math.random() * 300), update: function () { this.label = 'updated this item just now' } });
               },
               removeItem: function () {
                 this.itemList.shift();
+              },
+              updateItem: function () {
+                if (this.itemList.length)
+                  this.itemList[0].label = 'updated item' + Math.round(Math.random() * 300);
               }
             }, TodoAppTemplate)
         }, 200);

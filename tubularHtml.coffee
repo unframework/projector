@@ -180,25 +180,30 @@ window.tubularHtml = (viewModel, onRootElement) ->
       loopCursor itemStartNode
       loopCursor itemEndNode
 
-      itemBinding = null
-      itemOnDestroy = createBroadcast()
+      itemOnDestroy = null
 
-      @fork {
-        $tubularHtmlCursor: createCursor(currentDom, itemEndNode)
-        $tubularHtmlOnDestroy: itemOnDestroy
-      }, ->
-        itemBinding = @bind index, (v) ->
-          # clear old dom
-          # @todo this does not call onDestroy
-          while itemStartNode.nextSibling isnt itemEndNode
-            currentDom.removeChild(itemStartNode.nextSibling)
+      itemBinding = @bind index, (v) ->
+        # clear old dom
+        # @todo this does not call onDestroy
+        while itemStartNode.nextSibling isnt itemEndNode
+          currentDom.removeChild(itemStartNode.nextSibling)
 
-          subTemplate.call(this, v)
+        if itemOnDestroy
+          itemOnDestroy()
+
+        itemOnDestroy = createBroadcast()
+
+        @fork {
+          $tubularHtmlCursor: createCursor(currentDom, itemEndNode)
+          $tubularHtmlOnDestroy: itemOnDestroy
+        }, subTemplate
 
       # provide a cleanup callback
       () ->
         itemBinding.clear()
-        itemOnDestroy()
+
+        if itemOnDestroy
+          itemOnDestroy()
 
         # clean up DOM immediately
         while itemStartNode.nextSibling isnt itemEndNode
