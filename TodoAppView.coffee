@@ -6,9 +6,9 @@ window.TodoAppTemplate = ->
     document.getElementById('container').appendChild(element)
 
   @element '.acme-container-box', { role: 'container' }, ->
-    @bind 'itemList', ->
-      @attr dataTodoItemCount: 'length'
+    @attr dataTodoItemCount: 'itemList.length'
 
+    @bind 'itemList', ->
       @when 'length', ->
         @element 'h1#sampleHeading', ->
           @staticText 'Hello, world'

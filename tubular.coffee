@@ -2,6 +2,27 @@
 window.tubular = (rootModel, rootTemplate) ->
   watchList = []
 
+  createGetter = (model, path) ->
+    if model is undefined
+      # always is undefined
+      (-> undefined)
+    else if typeof path isnt 'string'
+      # non-strings (numbers)
+      (-> model[path])
+    else
+      elementList = if typeof path is 'number' then path else path.split '.'
+
+      if elementList.length is 1
+        # simple fast getter
+        (-> model[path])
+      else
+        # full getter
+        ->
+          v = model
+          for n in elementList
+            v = if v is undefined then undefined else v[n]
+          v
+
   runTemplate = (model, viewPrototype, template, preInitMap) ->
     viewModel =
       fork: (map, subTemplate) ->
@@ -9,11 +30,12 @@ window.tubular = (rootModel, rootTemplate) ->
         runTemplate model, viewModel, subTemplate, map
 
       bind: (path, subTemplate) ->
-        value = model[path]
+        getter = createGetter model, path
+        value = getter()
 
         watch = ->
           # get and compare with cached values
-          newValue = model[path]
+          newValue = getter()
           if newValue isnt value
             value = newValue
             runTemplate value, viewModel, subTemplate
