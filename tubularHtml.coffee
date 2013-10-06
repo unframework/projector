@@ -104,12 +104,13 @@ window.tubularHtml = (viewModel, onRootElement) ->
       binding.clear()
 
   viewModel.onClick = (path) ->
+    currentDom = @$tubularHtmlCursor()
     currentAction = null
-
-    @$tubularHtmlCursor().addEventListener 'click', =>
+    listener = =>
       if typeof currentAction is 'function'
         @apply currentAction
-    , false
+
+    currentDom.addEventListener 'click', listener, false
 
     binding = @bind path, (action) ->
       # @todo a cleanup conditional?
@@ -118,6 +119,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
     # clear binding when destroying
     @$tubularHtmlOnDestroy ->
       binding.clear()
+      currentDom.removeEventListener 'click', listener
 
   viewModel.when = (path, subTemplate) ->
     self = this
