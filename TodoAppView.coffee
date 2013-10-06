@@ -6,23 +6,23 @@ window.TodoAppTemplate = ->
     document.getElementById('container').appendChild(element)
 
   @element '.acme-container-box', { role: 'container' }, ->
-    @attr dataTodoItemCount: 'itemCount'
-
     @bind 'itemList', ->
+      @attr dataTodoItemCount: 'length'
+
       @when 'length', ->
         @element 'h1#sampleHeading', ->
-          @text 'Hello, world'
-          @show 'length'
+          @staticText 'Hello, world'
+          @text 'length'
 
         @element 'ul', ->
           @each (item) ->
             @element 'li', ->
-              @text 'This is: ' + item
+              @staticText 'This is: ' + item
 
     @element 'a', { href: '#' }, ->
-      @text 'Add Item'
+      @staticText 'Add Item'
       @onClick 'addItem'
 
     @element 'a', { href: '#' }, ->
-      @text 'Remove Item'
+      @staticText 'Remove Item'
       @onClick 'removeItem'

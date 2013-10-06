@@ -16,7 +16,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
       else
         listenerList.push callback
 
-  createState = (dom, trailer) ->
+  createCursor = (dom, trailer) ->
     # the state is a closure that normally returns the current context DOM, or inserts a child node if one is given
     (node) ->
       if node
@@ -67,7 +67,9 @@ window.tubularHtml = (viewModel, onRootElement) ->
       onRootElement childDom
 
     if subTemplate
-      @fork { $tubularHtmlCursor: createState(childDom) }, subTemplate
+      @fork {
+        $tubularHtmlCursor: createCursor(childDom)
+      }, subTemplate
 
   viewModel.attr = (setting) ->
     for n, path of setting
@@ -81,11 +83,11 @@ window.tubularHtml = (viewModel, onRootElement) ->
       @$tubularHtmlOnDestroy ->
         binding.clear()
 
-  viewModel.text = (setting) ->
-    childDom = @$tubularHtmlCursor().ownerDocument.createTextNode(setting)
-    @$tubularHtmlCursor childDom
+  viewModel.staticText = (text) ->
+    ownerDocument = @$tubularHtmlCursor().ownerDocument
+    @$tubularHtmlCursor ownerDocument.createTextNode(text)
 
-  viewModel.show = (path) ->
+  viewModel.text = (path) ->
     textNode = null
 
     binding = @bind path, (text) ->
@@ -138,7 +140,10 @@ window.tubularHtml = (viewModel, onRootElement) ->
           childOnDestroy = createBroadcast()
 
           # forking the original view-model, since this one is based around the condition model value
-          self.fork { $tubularHtmlCursor: createState(currentDom, endNode), $tubularHtmlOnDestroy: childOnDestroy }, subTemplate
+          self.fork {
+            $tubularHtmlCursor: createCursor(currentDom, endNode)
+            $tubularHtmlOnDestroy: childOnDestroy
+          }, subTemplate
         else
           while startNode.nextSibling isnt endNode
             startNode.parentNode.removeChild startNode.nextSibling # @todo optimize using local vars
@@ -167,7 +172,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
 
     @$tubularHtmlCursor endNode
 
-    loopCursor = createState(currentDom, endNode)
+    loopCursor = createCursor(currentDom, endNode)
 
     createItemSlot = (index) =>
       itemStartNode = currentDom.ownerDocument.createComment('^[]')
@@ -178,9 +183,13 @@ window.tubularHtml = (viewModel, onRootElement) ->
       itemBinding = null
       itemOnDestroy = createBroadcast()
 
-      @fork { $tubularHtmlCursor: createState(currentDom, itemEndNode), $tubularHtmlOnDestroy: itemOnDestroy }, ->
+      @fork {
+        $tubularHtmlCursor: createCursor(currentDom, itemEndNode)
+        $tubularHtmlOnDestroy: itemOnDestroy
+      }, ->
         itemBinding = @bind index, (v) ->
           # clear old dom
+          # @todo this does not call onDestroy
           while itemStartNode.nextSibling isnt itemEndNode
             currentDom.removeChild(itemStartNode.nextSibling)
 
