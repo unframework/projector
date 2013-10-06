@@ -5,8 +5,10 @@ window.TodoAppTemplate = ->
     # @todo this could be saved for later appending elsewhere, too
     document.getElementById('container').appendChild(element)
 
-  @element '.acme-container-box', { role: 'container' }, ->
-    @attr dataTodoItemCount: 'itemList.length'
+  @element '.acme-container-box', {
+    role: 'container'
+    dataTodoItemCount: '{{ itemList.length }}'
+  }, ->
 
     @bind 'itemList', ->
       @when 'length', ->

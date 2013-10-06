@@ -85,33 +85,29 @@ window.tubularHtml = (viewModel, onRootElement) ->
     if elementClassList.length
       childDom.setAttribute 'class', elementClassList.join ' '
 
+    # initialize root destroy broadcast
+    if not @$tubularHtmlOnDestroy
+      @$tubularHtmlOnDestroy = createBroadcast()
+
+    # attribute binding
     for o in options
-      for n, v of o
-        childDom.setAttribute n, v
+      for attributeName, attributeTemplate of o
+        snakeCaseName = attributeName.replace /[a-z][A-Z]/g, (a) ->
+          a[0] + '-' + a[1].toLowerCase()
+
+        bindCurlyString this, attributeTemplate, (v) ->
+          childDom.setAttribute snakeCaseName, v
 
     # if first element ever created, report it for external consumption, otherwise just append
     if @$tubularHtmlCursor
       @$tubularHtmlCursor childDom
     else
-      @$tubularHtmlOnDestroy = createBroadcast() # initialize root broadcast
       onRootElement childDom
 
     if subTemplate
       @fork {
         $tubularHtmlCursor: createCursor(childDom)
       }, subTemplate
-
-  viewModel.attr = (setting) ->
-    for n, path of setting
-      snakeCaseName = n.replace /[a-z][A-Z]/g, (a) ->
-        a[0] + '-' + a[1].toLowerCase()
-
-      binding = @bind path, (v) ->
-        @$tubularHtmlCursor().setAttribute snakeCaseName, v
-
-      # clear binding when destroying
-      @$tubularHtmlOnDestroy ->
-        binding.clear()
 
   viewModel.text = (curlyString) ->
     textNode = null
