@@ -14,10 +14,10 @@ window.TodoAppTemplate = ->
           @text 'Hello, world'
           @show 'length'
 
-      @element 'ul', ->
-        @each (item) ->
-          @element 'li', ->
-            @text 'This is: ' + item
+        @element 'ul', ->
+          @each (item) ->
+            @element 'li', ->
+              @text 'This is: ' + item
 
     @element 'a', { href: '#' }, ->
       @text 'Add Item'

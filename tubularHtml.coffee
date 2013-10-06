@@ -3,6 +3,19 @@ window.tubularHtml = (viewModel, onRootElement) ->
   # defensive check
   throw 'must supply root element callback' if typeof onRootElement isnt 'function'
 
+  createBroadcast = () ->
+    listenerList = []
+
+    (callback) ->
+      if not callback
+        # clean out listener list and safely fire the listeners
+        oldListenerList = listenerList
+        listenerList = null
+
+        l() for l in oldListenerList
+      else
+        listenerList.push callback
+
   createState = (dom, trailer) ->
     # the state is a closure that normally returns the current context DOM, or inserts a child node if one is given
     (node) ->
@@ -50,6 +63,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
     if @$tubularHtmlCursor
       @$tubularHtmlCursor childDom
     else
+      @$tubularHtmlOnDestroy = createBroadcast() # initialize root broadcast
       onRootElement childDom
 
     if subTemplate
@@ -60,8 +74,12 @@ window.tubularHtml = (viewModel, onRootElement) ->
       snakeCaseName = n.replace /[a-z][A-Z]/g, (a) ->
         a[0] + '-' + a[1].toLowerCase()
 
-      @bind path, (v) ->
+      binding = @bind path, (v) ->
         @$tubularHtmlCursor().setAttribute snakeCaseName, v
+
+      # clear binding when destroying
+      @$tubularHtmlOnDestroy ->
+        binding.clear()
 
   viewModel.text = (setting) ->
     childDom = @$tubularHtmlCursor().ownerDocument.createTextNode(setting)
@@ -70,7 +88,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
   viewModel.show = (path) ->
     textNode = null
 
-    @bind path, (text) ->
+    binding = @bind path, (text) ->
       if textNode
         newNode = textNode.ownerDocument.createTextNode(text)
         textNode.parentNode.replaceChild(newNode, textNode)
@@ -78,6 +96,10 @@ window.tubularHtml = (viewModel, onRootElement) ->
       else
         textNode = @$tubularHtmlCursor().ownerDocument.createTextNode(text)
         @$tubularHtmlCursor textNode
+
+    # clear binding when destroying
+    @$tubularHtmlOnDestroy ->
+      binding.clear()
 
   viewModel.onClick = (path) ->
     currentAction = null
@@ -87,13 +109,18 @@ window.tubularHtml = (viewModel, onRootElement) ->
         @apply currentAction
     , false
 
-    @bind path, (action) ->
+    binding = @bind path, (action) ->
       # @todo a cleanup conditional?
       currentAction = action
 
+    # clear binding when destroying
+    @$tubularHtmlOnDestroy ->
+      binding.clear()
+
   viewModel.when = (path, subTemplate) ->
     self = this
-    currentCondition = null # not true/false to always trigger first run
+    currentCondition = false # default state is false
+    childOnDestroy = null
 
     currentDom = @$tubularHtmlCursor()
 
@@ -103,18 +130,29 @@ window.tubularHtml = (viewModel, onRootElement) ->
     @$tubularHtmlCursor startNode
     @$tubularHtmlCursor endNode
 
-    @bind path, (v) ->
+    binding = @bind path, (v) ->
       condition = !!v # coerce to boolean
 
       if currentCondition isnt condition
         if condition
+          childOnDestroy = createBroadcast()
+
           # forking the original view-model, since this one is based around the condition model value
-          self.fork { $tubularHtmlCursor: createState(currentDom, endNode) }, subTemplate
+          self.fork { $tubularHtmlCursor: createState(currentDom, endNode), $tubularHtmlOnDestroy: childOnDestroy }, subTemplate
         else
           while startNode.nextSibling isnt endNode
             startNode.parentNode.removeChild startNode.nextSibling # @todo optimize using local vars
 
+          childOnDestroy()
+
         currentCondition = condition
+
+    # clear binding when destroying, and clean up child
+    @$tubularHtmlOnDestroy ->
+      binding.clear()
+
+      if currentCondition
+        childOnDestroy()
 
   # @todo we can't overthink the array state diff tracking logic (e.g. "item inserted" or "item removed")
   # because ultimately, that sort of event information should come from the model itself
@@ -137,10 +175,11 @@ window.tubularHtml = (viewModel, onRootElement) ->
       loopCursor itemStartNode
       loopCursor itemEndNode
 
-      binding = null
+      itemBinding = null
+      itemOnDestroy = createBroadcast()
 
-      @fork { $tubularHtmlCursor: createState(currentDom, itemEndNode) }, ->
-        binding = @bind index, (v) ->
+      @fork { $tubularHtmlCursor: createState(currentDom, itemEndNode), $tubularHtmlOnDestroy: itemOnDestroy }, ->
+        itemBinding = @bind index, (v) ->
           # clear old dom
           while itemStartNode.nextSibling isnt itemEndNode
             currentDom.removeChild(itemStartNode.nextSibling)
@@ -149,7 +188,8 @@ window.tubularHtml = (viewModel, onRootElement) ->
 
       # provide a cleanup callback
       () ->
-        binding.clear()
+        itemBinding.clear()
+        itemOnDestroy()
 
         # clean up DOM immediately
         while itemStartNode.nextSibling isnt itemEndNode
@@ -158,7 +198,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
         currentDom.removeChild(itemStartNode)
         currentDom.removeChild(itemEndNode)
 
-    @bind 'length', (length) ->
+    binding = @bind 'length', (length) ->
       # add items
       while items.length < length
         items.push createItemSlot(items.length)
@@ -168,3 +208,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
         itemCleanup = items.pop()
         itemCleanup()
 
+    # clear bindings when destroying, and clean up items
+    @$tubularHtmlOnDestroy ->
+      binding.clear()
+      itemCleanup() for itemCleanup in items
