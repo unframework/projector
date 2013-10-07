@@ -28,9 +28,9 @@ window.tubularHtml = (viewModel, onRootElement) ->
     slices = []
 
     createBinding = (sliceIndex, path) ->
-      binding = view.bind path, (v) ->
+      binding = view.bind path, ->
         # @todo don't fire spurious displays while constructing? this is not efficient anyway
-        slices[sliceIndex] = v
+        slices[sliceIndex] = @get()
         display slices.join('')
 
       view.$tubularHtmlOnDestroy ->
@@ -124,9 +124,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
   viewModel.onClick = (path) ->
     currentDom = @$tubularHtmlCursor()
     listener = =>
-      action = @get path
-      if typeof action is 'function'
-        @apply action
+      @apply path
 
     currentDom.addEventListener 'click', listener, false
 
@@ -147,8 +145,8 @@ window.tubularHtml = (viewModel, onRootElement) ->
     @$tubularHtmlCursor startNode
     @$tubularHtmlCursor endNode
 
-    binding = @bind path, (v) ->
-      condition = !!v # coerce to boolean
+    binding = @bind path, ->
+      condition = !!@get() # coerce to boolean
 
       if currentCondition isnt condition
         if condition
@@ -197,9 +195,8 @@ window.tubularHtml = (viewModel, onRootElement) ->
 
       itemOnDestroy = null
 
-      itemBinding = @bind index, (v) ->
+      itemBinding = @bind index, ->
         # clear old dom
-        # @todo this does not call onDestroy
         while itemStartNode.nextSibling isnt itemEndNode
           currentDom.removeChild(itemStartNode.nextSibling)
 
@@ -227,7 +224,9 @@ window.tubularHtml = (viewModel, onRootElement) ->
         currentDom.removeChild(itemStartNode)
         currentDom.removeChild(itemEndNode)
 
-    binding = @bind 'length', (length) ->
+    binding = @bind 'length', ->
+      length = @get()
+
       # add items
       while items.length < length
         items.push createItemSlot(items.length)

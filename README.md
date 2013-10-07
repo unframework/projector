@@ -27,6 +27,18 @@ Minor clarifications:
 
 * there is no such core concept as "destructor" for a view - the DOM-specific logic introduces a concept of "no longer relevant" and implements the corresponding unwatching conditions
 
+Immutability
+------------
+
+The view should not be able to modify the model. The only way to truly enforce that is by only expose string, number and boolean values to the view. I.e. the framework should not expose objects or functions, and just resolve path-gets into primitives.
+
+There is already a clear mental concept of associating a specific view instance with the specific model value (of any type). This is different than Angular's scope in that the model value is the scope. One-to-one with the view instance. Binding is a way to generate a new view for every new value. So the individual strings and numbers get their own views, and the latter can get the primitive value via "get as number" or "get as string", etc, getters.
+
+View State
+----------
+
+The view instance is already exposed as "this" in the template code. The framework code has nothing to do with that. To emulate live-bound state introduced by the *template*, we can "manually" introduce broadcasters into the view instance and then extend e.g. HTML library code to support those in addition to the regular model bindings. The prototype inheritance of views will expose the broadcaster to any forked sub-views.
+
 Forms and Input
 ---------------
 

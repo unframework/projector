@@ -66,9 +66,9 @@ window.tubular = (rootModel, rootTemplate) ->
         # create clean sub-view model and initialize it with given values
         runTemplate model, viewModel, subTemplate, map
 
-      get: (path) ->
-        # @todo this could be optimized but should happen rarely anyway
-        createGetter(model, path)()
+      get: () ->
+        # @todo type-check for primitives for true immutability
+        model
 
       bind: (path, subTemplate) ->
         getter = createGetter model, path
@@ -86,13 +86,17 @@ window.tubular = (rootModel, rootTemplate) ->
         # return a handle to be able to unwatch
         { clear: clear }
 
-      apply: (run) ->
-        # fail fast on error
-        if typeof run isnt 'function'
-          throw 'cannot apply a non-function, got ' + typeof run
+      apply: (path) ->
+        target = null
+        method = model
+        elementList = if typeof path is 'string' then path.split('.') else [ path ]
 
-        # @todo wrap in an try/catch? or just let it bubble up?
-        run.call(model)
+        for element in elementList
+          target = method
+          method = target[element]
+
+        # @todo wrap in an try/catch? or just let it bubble up? need to fail-fast here
+        method.call(target)
 
         modelNotify()
 
