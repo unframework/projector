@@ -1,7 +1,5 @@
 
 window.tubular = (rootModel, rootTemplate) ->
-  watchList = []
-
   createGetter = (model, path) ->
     if model is undefined
       # always is undefined
@@ -23,6 +21,45 @@ window.tubular = (rootModel, rootTemplate) ->
             v = if v is undefined then undefined else v[n]
           v
 
+  createNotifier = ->
+    list = []
+
+    (callback) ->
+      if typeof callback isnt 'function'
+        # invoke watches and cull ones that request to be removed
+        # for speed, we just rewrite the portion of the list in place every time, eliminating cleared watches
+        # @todo surely, this should be wrapped in try/catch
+        count = list.length
+        index = 0
+        compactedCount = 0
+
+        while index < count
+          listener = list[index]
+          index += 1
+
+          if listener[0]
+            # preserve the listener for next run
+            list[compactedCount] = listener
+            compactedCount += 1
+
+            listener[0]()
+
+        # truncate compacted listener list (preserving any watches that have been added during this run)
+        list.splice(compactedCount, count - compactedCount)
+
+        console.log 'watch count', list.length
+
+      else
+        listener = [ callback ]
+        list.push listener
+
+        # return a handle to be able to unwatch
+        ->
+          # delayed removal for safety
+          listener[0] = null
+
+  modelNotify = createNotifier()
+
   runTemplate = (model, viewPrototype, template, preInitMap) ->
     viewModel =
       fork: (map, subTemplate) ->
@@ -37,25 +74,17 @@ window.tubular = (rootModel, rootTemplate) ->
         getter = createGetter model, path
         value = getter()
 
-        watch = ->
+        clear = modelNotify ->
           # get and compare with cached values
           newValue = getter()
           if newValue isnt value
             value = newValue
             runTemplate value, viewModel, subTemplate
 
-        watch.isCleared = false
-
-        watchList.push watch
-
         runTemplate value, viewModel, subTemplate
 
         # return a handle to be able to unwatch
-        {
-          clear: ->
-            # delayed removal for safety
-            watch.isCleared = true
-        }
+        { clear: clear }
 
       apply: (run) ->
         # fail fast on error
@@ -65,28 +94,7 @@ window.tubular = (rootModel, rootTemplate) ->
         # @todo wrap in an try/catch? or just let it bubble up?
         run.call(model)
 
-        # invoke watches and cull ones that request to be removed
-        # for speed, we just rewrite the portion of the list in place every time, eliminating cleared watches
-        # @todo surely, this should be wrapped in try/catch
-        watchCount = watchList.length
-        watchIndex = 0
-        compactedWatchCount = 0
-
-        while watchIndex < watchCount
-          watch = watchList[watchIndex]
-          watchIndex += 1
-
-          if not watch.isCleared
-            # preserve the watch for next run
-            watchList[compactedWatchCount] = watch
-            compactedWatchCount += 1
-
-            watch()
-
-        # truncate compacted watch list (preserving any watches that have been added during this run)
-        watchList.splice(compactedWatchCount, watchCount - compactedWatchCount)
-
-        console.log 'watch count', watchList.length
+        modelNotify()
 
     if preInitMap
       viewModel[n] = v for n, v of preInitMap
