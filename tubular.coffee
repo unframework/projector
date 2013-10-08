@@ -1,26 +1,5 @@
 
 window.tubular = (rootModel, rootTemplate) ->
-  createGetter = (model, path) ->
-    if model is undefined
-      # always is undefined
-      (-> undefined)
-    else if typeof path isnt 'string'
-      # non-strings (numbers)
-      (-> model[path])
-    else
-      elementList = if typeof path is 'number' then path else path.split '.'
-
-      if elementList.length is 1
-        # simple fast getter
-        (-> model[path])
-      else
-        # full getter
-        ->
-          v = model
-          for n in elementList
-            v = if v is undefined then undefined else v[n]
-          v
-
   createNotifier = ->
     list = []
 
@@ -60,31 +39,64 @@ window.tubular = (rootModel, rootTemplate) ->
 
   modelNotify = createNotifier()
 
+  bindOnChange = (getter, notify, viewInstance, subTemplate) ->
+    value = getter()
+
+    clear = notify ->
+      # get and compare with cached values
+      newValue = getter()
+      if newValue isnt value
+        value = newValue
+        runTemplate value, viewInstance, subTemplate
+
+    runTemplate value, viewInstance, subTemplate
+
+    # return a handle to be able to unwatch
+    { clear: clear }
+
   runTemplate = (model, viewPrototype, template, preInitMap) ->
-    viewModel =
+    viewModel = {}
+    viewModelNotify = createNotifier()
+
+    bindVariable = (name, subTemplate) ->
+      bindOnChange (-> viewModel[name]), viewModelNotify, viewInstance, subTemplate
+
+    bindIndex = (index, subTemplate) ->
+      getter = if typeof model is 'object' then (-> model[index]) else (-> undefined)
+      bindOnChange getter, modelNotify, viewInstance, subTemplate
+
+    bindPath = (pathElementList, subTemplate) ->
+      # recursive getter that freezes actual path elements inside the closures
+      createGetter = (parentGetter, index) ->
+        if index >= pathElementList.length
+          parentGetter
+        else
+          element = pathElementList[index]
+          createGetter (-> v = parentGetter(); if typeof v isnt 'object' then undefined else v[element]), index + 1
+
+      getter = createGetter (-> model), 0
+      bindOnChange getter, modelNotify, viewInstance, subTemplate
+
+    viewInstance =
       fork: (map, subTemplate) ->
         # create clean sub-view model and initialize it with given values
-        runTemplate model, viewModel, subTemplate, map
+        runTemplate model, viewInstance, subTemplate, map
 
       get: () ->
         # @todo type-check for primitives for true immutability
         model
 
+      variable: (name, value) ->
+        viewModel[name] = value
+        viewModelNotify()
+
       bind: (path, subTemplate) ->
-        getter = createGetter model, path
-        value = getter()
-
-        clear = modelNotify ->
-          # get and compare with cached values
-          newValue = getter()
-          if newValue isnt value
-            value = newValue
-            runTemplate value, viewModel, subTemplate
-
-        runTemplate value, viewModel, subTemplate
-
-        # return a handle to be able to unwatch
-        { clear: clear }
+        if typeof path isnt 'string'
+          bindIndex path, subTemplate
+        else if path[0] is '@'
+          bindVariable path.substring(1), subTemplate
+        else
+          bindPath path.split('.'), subTemplate
 
       apply: (path) ->
         target = null
@@ -101,11 +113,11 @@ window.tubular = (rootModel, rootTemplate) ->
         modelNotify()
 
     if preInitMap
-      viewModel[n] = v for n, v of preInitMap
+      viewInstance[n] = v for n, v of preInitMap
 
-    viewModel.__proto__ = viewPrototype
+    viewInstance.__proto__ = viewPrototype
 
-    template.call(viewModel, model)
+    template.call(viewInstance, model)
 
     undefined # prevent stray output
 

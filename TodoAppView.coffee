@@ -17,12 +17,15 @@ window.TodoAppTemplate = ->
 
         @element 'ul', ->
           @each ->
+            @variable 'isEdited', true
+
             @element 'li', ->
               @text 'This is: {{ label }}'
 
-              @element 'a', { href: '#' }, ->
-                @text 'Update Me'
-                @onClick 'update'
+              @when '@isEdited', ->
+                @element 'a', { href: '#' }, ->
+                  @text 'Update Me'
+                  @onClick 'update'
 
 
     @element 'a', { href: '#' }, ->
