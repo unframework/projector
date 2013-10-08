@@ -47,17 +47,14 @@ window.tubular = (rootModel, rootTemplate) ->
       newValue = getter()
       if newValue isnt value
         value = newValue
-        runTemplate value, viewInstance, subTemplate
+        runTemplate value, {}, createNotifier(), viewInstance, subTemplate
 
-    runTemplate value, viewInstance, subTemplate
+    runTemplate value, {}, createNotifier(), viewInstance, subTemplate
 
     # return a handle to be able to unwatch
     { clear: clear }
 
-  runTemplate = (model, viewPrototype, template, preInitMap) ->
-    viewModel = {}
-    viewModelNotify = createNotifier()
-
+  runTemplate = (model, viewModel, viewModelNotify, viewPrototype, template, preInitMap) ->
     bindVariable = (name, subTemplate) ->
       bindOnChange (-> viewModel[name]), viewModelNotify, viewInstance, subTemplate
 
@@ -80,7 +77,7 @@ window.tubular = (rootModel, rootTemplate) ->
     viewInstance =
       fork: (map, subTemplate) ->
         # create clean sub-view model and initialize it with given values
-        runTemplate model, viewInstance, subTemplate, map
+        runTemplate model, viewModel, viewModelNotify, viewInstance, subTemplate, map
 
       get: () ->
         # @todo type-check for primitives for true immutability
@@ -121,4 +118,4 @@ window.tubular = (rootModel, rootTemplate) ->
 
     undefined # prevent stray output
 
-  runTemplate rootModel, Object.prototype, rootTemplate
+  runTemplate rootModel, {}, createNotifier(), Object.prototype, rootTemplate
