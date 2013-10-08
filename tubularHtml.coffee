@@ -132,6 +132,20 @@ window.tubularHtml = (viewModel, onRootElement) ->
     @$tubularHtmlOnDestroy ->
       currentDom.removeEventListener 'click', listener
 
+  viewModel.onClickToggle = (variableName) ->
+    currentValue = null
+    currentDom = @$tubularHtmlCursor()
+
+    binding = @bind '@' + variableName, -> currentValue = @get()
+    listener = => @variable variableName, !currentValue
+
+    currentDom.addEventListener 'click', listener, false
+
+    # clean up state
+    @$tubularHtmlOnDestroy ->
+      binding.clear()
+      currentDom.removeEventListener 'click', listener
+
   viewModel.when = (path, subTemplate) ->
     self = this
     currentCondition = false # default state is false

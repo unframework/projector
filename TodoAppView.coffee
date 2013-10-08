@@ -22,10 +22,13 @@ window.TodoAppTemplate = ->
             @element 'li', ->
               @text 'This is: {{ label }}'
 
+              @element 'a', { href: '#' }, ->
+                @text 'Update Me'
+                @onClickToggle 'isEdited'
+
               @when '@isEdited', ->
-                @element 'a', { href: '#' }, ->
-                  @text 'Update Me'
-                  @onClick 'update'
+                @element ->
+                  @text 'This is an edit form'
 
 
     @element 'a', { href: '#' }, ->
