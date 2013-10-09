@@ -28,9 +28,11 @@ window.tubularHtml = (viewModel, onRootElement) ->
     slices = []
 
     createBinding = (sliceIndex, path) ->
-      binding = view.bind path, ->
+      elementList = path.split '.'
+
+      binding = view[elementList.shift()] elementList, 'value', ->
         # @todo don't fire spurious displays while constructing? this is not efficient anyway
-        slices[sliceIndex] = @get()
+        slices[sliceIndex] = @value
         display slices.join('')
 
       view.$tubularHtmlOnDestroy ->
@@ -121,15 +123,19 @@ window.tubularHtml = (viewModel, onRootElement) ->
         textNode = @$tubularHtmlCursor().ownerDocument.createTextNode(text)
         @$tubularHtmlCursor textNode
 
-  viewModel.onClick = (path) ->
+  viewModel.onClick = (pathString) ->
+    path = pathString.split '.'
     currentDom = @$tubularHtmlCursor()
-    listener = =>
-      @apply path
+    currentInvoker = null
+
+    binding = this[path.shift()] path, 'invoker', -> currentInvoker = @invoker
+    listener = => currentInvoker.invoke()
 
     currentDom.addEventListener 'click', listener, false
 
     # clean up state
     @$tubularHtmlOnDestroy ->
+      binding.clear()
       currentDom.removeEventListener 'click', listener
 
   viewModel.onClickToggle = (variableName) ->
@@ -146,21 +152,22 @@ window.tubularHtml = (viewModel, onRootElement) ->
       binding.clear()
       currentDom.removeEventListener 'click', listener
 
-  viewModel.when = (path, subTemplate) ->
+  viewModel.when = (pathString, subTemplate) ->
+    path = pathString.split '.'
     self = this
     currentCondition = false # default state is false
     childOnDestroy = null
 
     currentDom = @$tubularHtmlCursor()
 
-    startNode = currentDom.ownerDocument.createComment('^' + path)
-    endNode = currentDom.ownerDocument.createComment('$' + path)
+    startNode = currentDom.ownerDocument.createComment('^' + pathString)
+    endNode = currentDom.ownerDocument.createComment('$' + pathString)
 
     @$tubularHtmlCursor startNode
     @$tubularHtmlCursor endNode
 
-    binding = @bind path, ->
-      condition = !!@get() # coerce to boolean
+    binding = this[path.shift()] path, 'value', ->
+      condition = !!@value # coerce to boolean
 
       if currentCondition isnt condition
         if condition
@@ -192,7 +199,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
   # just to show the fadeout animation instead of reusing a piece of DOM from the original list
   # doing too much guessing otherwise would trip up on cases where item content just changed and "seems" as if something
   # was removed but actually wasn't
-  viewModel.each = (subTemplate) ->
+  viewModel.each = (name, itemName, subTemplate) ->
     currentDom = @$tubularHtmlCursor()
     endNode = currentDom.ownerDocument.createComment('...')
     items = []
@@ -209,7 +216,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
 
       itemOnDestroy = null
 
-      itemBinding = @bind index, ->
+      itemBinding = this[name] [ index ], itemName, ->
         # clear old dom
         while itemStartNode.nextSibling isnt itemEndNode
           currentDom.removeChild(itemStartNode.nextSibling)
@@ -238,8 +245,8 @@ window.tubularHtml = (viewModel, onRootElement) ->
         currentDom.removeChild(itemStartNode)
         currentDom.removeChild(itemEndNode)
 
-    binding = @bind 'length', ->
-      length = @get()
+    binding = this[name] [ 'length' ], 'length', ->
+      length = @length
 
       # add items
       while items.length < length

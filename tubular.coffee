@@ -39,75 +39,70 @@ window.tubular = (rootModel, rootTemplate) ->
 
   modelNotify = createNotifier()
 
-  createViewScope = (model) ->
-    viewModel = {}
-    viewModelNotify = createNotifier()
+  # recursive getter that freezes actual path elements inside the closures
+  createPathGetter = (target, list) ->
+    createGetter = (parentGetter, index) ->
+      if index >= list.length
+        parentGetter
+      else
+        element = list[index]
+        currentGetter = ->
+          v = parentGetter()
 
-    bindOnChange = (viewInstance, getter, notify, subTemplate) ->
-      value = getter()
+          if typeof v isnt 'object'
+            undefined
+          else if typeof v[element] is 'function'
+            v[element].bind(v)
+          else
+            v[element]
 
-      clear = notify ->
-        # get and compare with cached values
-        newValue = getter()
-        if newValue isnt value
-          value = newValue
-          viewInstance.fork createViewScope(value), subTemplate
+        createGetter currentGetter, index + 1
 
-      viewInstance.fork createViewScope(value), subTemplate
+    createGetter (-> target), 0
 
-      # return a handle to be able to unwatch
-      { clear: clear }
+  wrapModelProperty = (target, notify) ->
+    targetType = typeof target
 
-    bindVariable = (viewInstance, name, subTemplate) ->
-      bindOnChange viewInstance, (-> viewModel[name]), viewModelNotify, subTemplate
+    if targetType isnt 'object' and targetType isnt 'function'
+      # nothing mutable to wrap
+      target
 
-    bindIndex = (viewInstance, index, subTemplate) ->
-      getter = if typeof model is 'object' then (-> model[index]) else (-> undefined)
-      bindOnChange viewInstance, getter, modelNotify, subTemplate
+    else
+      # return a binding function
+      wrapper = (pathElementList, name, subTemplate) ->
+        # @todo return dummy unwatched binding if path is empty (can never generate a change of value)
+        viewInstance = this
+        getter = createPathGetter target, pathElementList
+        value = getter()
 
-    bindPath = (viewInstance, pathElementList, subTemplate) ->
-      # recursive getter that freezes actual path elements inside the closures
-      createGetter = (parentGetter, index) ->
-        if index >= pathElementList.length
-          parentGetter
-        else
-          element = pathElementList[index]
-          createGetter (-> v = parentGetter(); if typeof v isnt 'object' then undefined else v[element]), index + 1
+        clear = notify ->
+          # get and compare with cached values
+          newValue = getter()
+          if newValue isnt value
+            value = newValue
+            map = {}
+            map[name] = wrapModelProperty(value, notify)
+            viewInstance.fork map, subTemplate
 
-      getter = createGetter (-> model), 0
-      bindOnChange viewInstance, getter, modelNotify, subTemplate
+        initialMap = {}
+        initialMap[name] = wrapModelProperty(value, notify)
+        viewInstance.fork initialMap, subTemplate
 
-    {
-      bind: (path, subTemplate) ->
-        if typeof path isnt 'string'
-          bindIndex this, path, subTemplate
-        else if path[0] is '@'
-          bindVariable this, path.substring(1), subTemplate
-        else
-          bindPath this, path.split('.'), subTemplate
+        # return a handle to be able to unwatch
+        { clear: clear }
 
-      get: () ->
-        # @todo type-check for primitives for true immutability
-        model
+      if targetType is 'function'
+        # add an invoker
+        wrapper.invoke = () ->
+          # @todo try/catch? or just let it fail-fast
+          target()
+          notify()
 
-      variable: (name, value) ->
-        viewModel[name] = value
-        viewModelNotify()
+      wrapper
 
-      apply: (path) ->
-        target = null
-        method = model
-        elementList = if typeof path is 'string' then path.split('.') else [ path ]
-
-        for element in elementList
-          target = method
-          method = target[element]
-
-        # @todo wrap in an try/catch? or just let it bubble up? need to fail-fast here
-        method.call(target)
-
-        modelNotify()
-    }
+  initialScope = {}
+  for n, v of rootModel
+    initialScope[n] = wrapModelProperty((if typeof v is 'function' then v.bind(rootModel) else v), modelNotify)
 
   # @todo mask a top-level property and also keep track of which scope notifier it is
   # @todo this works exactly like before, except the bound model is not "this", but a named property, to allow access to previous scopes
@@ -128,4 +123,4 @@ window.tubular = (rootModel, rootTemplate) ->
 
     undefined # prevent stray output
 
-  runTemplate Object.prototype, createViewScope(rootModel), rootTemplate
+  runTemplate Object.prototype, initialScope, rootTemplate

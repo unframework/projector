@@ -10,26 +10,24 @@ window.TodoAppTemplate = ->
     dataTodoItemCount: '{{ itemList.length }}'
   }, ->
 
-    @bind 'itemList', ->
-      @when 'length', ->
-        @element 'h1#sampleHeading', ->
-          @text 'Hello, world {{ length }}'
+    @when 'itemList.length', ->
+      @element 'h1#sampleHeading', ->
+        @text 'Hello, world {{ itemList.length }}'
 
-        @element 'ul', ->
-          @each ->
-            @variable 'isEdited', true
+      @element 'ul', ->
+        @each 'itemList', 'item', ->
+          #@variable 'isEdited', true
 
-            @element 'li', ->
-              @text 'This is: {{ label }}'
+          @element 'li', ->
+            @text 'This is: {{ item.label }}'
 
-              @element 'a', { href: '#' }, ->
-                @text 'Update Me'
-                @onClickToggle 'isEdited'
+            @element 'a', { href: '#' }, ->
+              @text 'Update Me'
+              # @onClickToggle 'isEdited'
 
-              @when '@isEdited', ->
-                @element ->
-                  @text 'This is an edit form'
-
+            # @when '@isEdited', ->
+            #   @element ->
+            #     @text 'This is an edit form'
 
     @element 'a', { href: '#' }, ->
       @text 'Add Item'
