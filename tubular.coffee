@@ -39,30 +39,33 @@ window.tubular = (rootModel, rootTemplate) ->
 
   modelNotify = createNotifier()
 
-  bindOnChange = (getter, notify, viewInstance, subTemplate) ->
-    value = getter()
+  createViewScope = (model) ->
+    viewModel = {}
+    viewModelNotify = createNotifier()
 
-    clear = notify ->
-      # get and compare with cached values
-      newValue = getter()
-      if newValue isnt value
-        value = newValue
-        runTemplate value, {}, createNotifier(), viewInstance, subTemplate
+    bindOnChange = (viewInstance, getter, notify, subTemplate) ->
+      value = getter()
 
-    runTemplate value, {}, createNotifier(), viewInstance, subTemplate
+      clear = notify ->
+        # get and compare with cached values
+        newValue = getter()
+        if newValue isnt value
+          value = newValue
+          viewInstance.fork createViewScope(value), subTemplate
 
-    # return a handle to be able to unwatch
-    { clear: clear }
+      viewInstance.fork createViewScope(value), subTemplate
 
-  runTemplate = (model, viewModel, viewModelNotify, viewPrototype, template, preInitMap) ->
-    bindVariable = (name, subTemplate) ->
-      bindOnChange (-> viewModel[name]), viewModelNotify, viewInstance, subTemplate
+      # return a handle to be able to unwatch
+      { clear: clear }
 
-    bindIndex = (index, subTemplate) ->
+    bindVariable = (viewInstance, name, subTemplate) ->
+      bindOnChange viewInstance, (-> viewModel[name]), viewModelNotify, subTemplate
+
+    bindIndex = (viewInstance, index, subTemplate) ->
       getter = if typeof model is 'object' then (-> model[index]) else (-> undefined)
-      bindOnChange getter, modelNotify, viewInstance, subTemplate
+      bindOnChange viewInstance, getter, modelNotify, subTemplate
 
-    bindPath = (pathElementList, subTemplate) ->
+    bindPath = (viewInstance, pathElementList, subTemplate) ->
       # recursive getter that freezes actual path elements inside the closures
       createGetter = (parentGetter, index) ->
         if index >= pathElementList.length
@@ -72,12 +75,16 @@ window.tubular = (rootModel, rootTemplate) ->
           createGetter (-> v = parentGetter(); if typeof v isnt 'object' then undefined else v[element]), index + 1
 
       getter = createGetter (-> model), 0
-      bindOnChange getter, modelNotify, viewInstance, subTemplate
+      bindOnChange viewInstance, getter, modelNotify, subTemplate
 
-    viewInstance =
-      fork: (map, subTemplate) ->
-        # create clean sub-view model and initialize it with given values
-        runTemplate model, viewModel, viewModelNotify, viewInstance, subTemplate, map
+    {
+      bind: (path, subTemplate) ->
+        if typeof path isnt 'string'
+          bindIndex this, path, subTemplate
+        else if path[0] is '@'
+          bindVariable this, path.substring(1), subTemplate
+        else
+          bindPath this, path.split('.'), subTemplate
 
       get: () ->
         # @todo type-check for primitives for true immutability
@@ -86,14 +93,6 @@ window.tubular = (rootModel, rootTemplate) ->
       variable: (name, value) ->
         viewModel[name] = value
         viewModelNotify()
-
-      bind: (path, subTemplate) ->
-        if typeof path isnt 'string'
-          bindIndex path, subTemplate
-        else if path[0] is '@'
-          bindVariable path.substring(1), subTemplate
-        else
-          bindPath path.split('.'), subTemplate
 
       apply: (path) ->
         target = null
@@ -108,14 +107,25 @@ window.tubular = (rootModel, rootTemplate) ->
         method.call(target)
 
         modelNotify()
+    }
+
+  # @todo mask a top-level property and also keep track of which scope notifier it is
+  # @todo this works exactly like before, except the bound model is not "this", but a named property, to allow access to previous scopes
+  # @todo this fits the idea of a model still - it's now a view-model, groomed by the template glue code for convenience
+  # @todo an alternative could be to track "parent" scope name - but this just fits programmer mindset better and is more convenient and closer to the template conventions
+  runTemplate = (viewPrototype, preInitMap, template) ->
+    viewInstance =
+      fork: (map, subTemplate) ->
+        # create clean sub-view model and initialize it with given values
+        runTemplate viewInstance, map, subTemplate
 
     if preInitMap
       viewInstance[n] = v for n, v of preInitMap
 
     viewInstance.__proto__ = viewPrototype
 
-    template.call(viewInstance, model)
+    template.call(viewInstance)
 
     undefined # prevent stray output
 
-  runTemplate rootModel, {}, createNotifier(), Object.prototype, rootTemplate
+  runTemplate Object.prototype, createViewScope(rootModel), rootTemplate
