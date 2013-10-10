@@ -16,7 +16,7 @@ window.TodoAppTemplate = ->
 
       @element 'ul', ->
         @each '_.itemList', 'item', ->
-          setter = @declare 'isEdited', true, ->
+          setter = @variable 'isEdited', true, ->
 
             @element 'li', ->
               @text 'This is: {{ item.label }}'

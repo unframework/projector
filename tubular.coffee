@@ -60,17 +60,17 @@ window.tubular = (rootModel, rootTemplate) ->
 
     createGetter (-> target), 0
 
-  createBoundVariableFinder = (parentFinder, varName, boundValue, notify) ->
+  createBoundVariableScope = (parentFinder, varName, boundValue, notify) ->
     createGetter = (subPath) ->
       createPathGetter boundValue, subPath
 
-    (name, callback) ->
+    createScopeWithFinder (name, callback) ->
       if name is varName
         callback createGetter, notify
       else
         parentFinder name, callback
 
-  createMutableVariableFinder = (parentFinder, varName, varValue) ->
+  createMutableVariableScope = (parentFinder, varName, varValue) ->
     varNotify = createNotifier()
     createGetter = (subPath) ->
       if subPath.length isnt 0
@@ -81,7 +81,7 @@ window.tubular = (rootModel, rootTemplate) ->
     # @todo pass this back somehow
     setter = ((v) -> varValue = v)
 
-    (name, callback) ->
+    createScopeWithFinder (name, callback) ->
       if name is varName
         callback createGetter, varNotify
       else
@@ -104,9 +104,9 @@ window.tubular = (rootModel, rootTemplate) ->
             newValue = getter()
             if newValue isnt value
               value = newValue
-              runTemplate viewInstance, createScopeWithFinder(createBoundVariableFinder(variableFinder, subName, value, notify)), subTemplate
+              runTemplate viewInstance, createBoundVariableScope(variableFinder, subName, value, notify), subTemplate
 
-          runTemplate viewInstance, createScopeWithFinder(createBoundVariableFinder(variableFinder, subName, value, notify)), subTemplate
+          runTemplate viewInstance, createBoundVariableScope(variableFinder, subName, value, notify), subTemplate
 
           { clear: clear }
 
@@ -124,8 +124,8 @@ window.tubular = (rootModel, rootTemplate) ->
         else
           result
 
-      declare: (varName, initialValue, subTemplate) ->
-        runTemplate this, createScopeWithFinder(createMutableVariableFinder(variableFinder, varName, initialValue)), subTemplate
+      variable: (varName, initialValue, subTemplate) ->
+        runTemplate this, createMutableVariableScope(variableFinder, varName, initialValue), subTemplate
     }
 
   # @todo mask a top-level property and also keep track of which scope notifier it is
@@ -147,6 +147,6 @@ window.tubular = (rootModel, rootTemplate) ->
 
     undefined # prevent stray output
 
-  initialScope = createScopeWithFinder(createBoundVariableFinder ((varName) -> throw 'unknown variable ' + varName), '_', rootModel, modelNotify)
+  initialScope = createBoundVariableScope ((varName) -> throw 'unknown variable ' + varName), '_', rootModel, modelNotify
 
   runTemplate Object.prototype, initialScope, rootTemplate
