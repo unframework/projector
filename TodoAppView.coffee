@@ -7,15 +7,15 @@ window.TodoAppTemplate = ->
 
   @element '.acme-container-box', {
     role: 'container'
-    dataTodoItemCount: '{{ itemList.length }}'
+    dataTodoItemCount: '{{ _.itemList.length }}'
   }, ->
 
-    @when 'itemList.length', ->
+    @when '_.itemList.length', ->
       @element 'h1#sampleHeading', ->
-        @text 'Hello, world {{ itemList.length }}'
+        @text 'Hello, world {{ _.itemList.length }}'
 
       @element 'ul', ->
-        @each 'itemList', 'item', ->
+        @each '_.itemList', 'item', ->
           #@variable 'isEdited', true
 
           @element 'li', ->
@@ -31,12 +31,12 @@ window.TodoAppTemplate = ->
 
     @element 'a', { href: '#' }, ->
       @text 'Add Item'
-      @onClick 'addItem'
+      @onClick '_.addItem'
 
     @element 'a', { href: '#' }, ->
       @text 'Update Item'
-      @onClick 'updateItem'
+      @onClick '_.updateItem'
 
     @element 'a', { href: '#' }, ->
       @text 'Remove Item'
-      @onClick 'removeItem'
+      @onClick '_.removeItem'

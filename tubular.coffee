@@ -60,49 +60,43 @@ window.tubular = (rootModel, rootTemplate) ->
 
     createGetter (-> target), 0
 
-  wrapModelProperty = (target, notify) ->
-    targetType = typeof target
+  bindOnChange = (getter, notify, onChange) ->
+    value = getter()
+    clear = notify ->
+      # get and compare with cached values
+      newValue = getter()
+      if newValue isnt value
+        value = newValue
+        onChange value
 
-    if targetType isnt 'object' and targetType isnt 'function'
-      # nothing mutable to wrap
-      target
+    onChange value
 
+    { clear: clear }
+
+  createAugmentedScope = (parentBind, parentGet, name, model) ->
+    immutableModel = if typeof model is 'object'
+      undefined
+    else if typeof model is 'function'
+      (-> model(); modelNotify())
     else
-      # return a binding function
-      wrapper = (pathElementList, name, subTemplate) ->
-        # @todo return dummy unwatched binding if path is empty (can never generate a change of value)
-        viewInstance = this
-        getter = createPathGetter target, pathElementList
-        value = getter()
+      model
 
-        clear = notify ->
-          # get and compare with cached values
-          newValue = getter()
-          if newValue isnt value
-            value = newValue
-            map = {}
-            map[name] = wrapModelProperty(value, notify)
-            viewInstance.fork map, subTemplate
+    performBind = (viewInstance, subName, path, subTemplate) ->
+      if path[0] is name
+        getter = createPathGetter model, path.slice(1)
+        bindOnChange getter, modelNotify, (value) ->
+          viewInstance.fork createAugmentedScope(performBind, performGet, subName, value), subTemplate
+      else
+        parentBind viewInstance, subName, path, subTemplate
 
-        initialMap = {}
-        initialMap[name] = wrapModelProperty(value, notify)
-        viewInstance.fork initialMap, subTemplate
+    performGet = (varName) -> if varName is name then immutableModel else parentGet(varName)
 
-        # return a handle to be able to unwatch
-        { clear: clear }
-
-      if targetType is 'function'
-        # add an invoker
-        wrapper.invoke = () ->
-          # @todo try/catch? or just let it fail-fast
-          target()
-          notify()
-
-      wrapper
-
-  initialScope = {}
-  for n, v of rootModel
-    initialScope[n] = wrapModelProperty((if typeof v is 'function' then v.bind(rootModel) else v), modelNotify)
+    {
+      bind: (varName, path, template) ->
+        performBind this, varName, path, template
+      get: (varName) ->
+        performGet varName
+    }
 
   # @todo mask a top-level property and also keep track of which scope notifier it is
   # @todo this works exactly like before, except the bound model is not "this", but a named property, to allow access to previous scopes
@@ -122,5 +116,7 @@ window.tubular = (rootModel, rootTemplate) ->
     template.call(viewInstance)
 
     undefined # prevent stray output
+
+  initialScope = createAugmentedScope ((viewInstance, subName, path, subTemplate) -> throw 'unknown path ' + path), ((varName) -> throw 'unknown variable ' + varName), '_', rootModel
 
   runTemplate Object.prototype, initialScope, rootTemplate
