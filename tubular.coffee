@@ -110,11 +110,14 @@ window.tubular = (rootModel, rootTemplate) ->
 
           { clear: clear }
 
-      get: (varName) ->
+      get: (path) ->
+        sourceVarName = path[0]
+        subPath = path.slice 1
+
         result = undefined
         resultNotify = undefined
-        variableFinder varName, (createGetter, notify) ->
-          result = createGetter([])()
+        variableFinder sourceVarName, (createGetter, notify) ->
+          result = createGetter(subPath)()
           resultNotify = notify
 
         if typeof result is 'object'
