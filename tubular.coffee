@@ -60,42 +60,66 @@ window.tubular = (rootModel, rootTemplate) ->
 
     createGetter (-> target), 0
 
-  bindOnChange = (getter, notify, onChange) ->
-    value = getter()
-    clear = notify ->
-      # get and compare with cached values
-      newValue = getter()
-      if newValue isnt value
-        value = newValue
-        onChange value
+  createBoundVariableFinder = (parentFinder, varName, boundValue, notify) ->
+    createGetter = (subPath) ->
+      createPathGetter boundValue, subPath
 
-    onChange value
-
-    { clear: clear }
-
-  createAugmentedScope = (parentBind, parentGet, name, model) ->
-    immutableModel = if typeof model is 'object'
-      undefined
-    else if typeof model is 'function'
-      (-> model(); modelNotify())
-    else
-      model
-
-    performBind = (viewInstance, subName, path, subTemplate) ->
-      if path[0] is name
-        getter = createPathGetter model, path.slice(1)
-        bindOnChange getter, modelNotify, (value) ->
-          viewInstance.fork createAugmentedScope(performBind, performGet, subName, value), subTemplate
+    (name, callback) ->
+      if name is varName
+        callback createGetter, notify
       else
-        parentBind viewInstance, subName, path, subTemplate
+        parentFinder name, callback
 
-    performGet = (varName) -> if varName is name then immutableModel else parentGet(varName)
+  createMutableVariableFinder = (parentFinder, varName, varValue) ->
+    varNotify = createNotifier()
+    createGetter = (subPath) ->
+      if path.length isnt 0
+        throw 'cannot bind to var subpath'
+      else
+        (-> varValue)
 
+    (name, callback) ->
+      if name is varName
+        callback createGetter, varNotify
+      else
+        parentFinder name, callback
+
+  createScopeWithFinder = (variableFinder) ->
     {
-      bind: (varName, path, template) ->
-        performBind this, varName, path, template
+      bind: (subName, path, subTemplate) ->
+        viewInstance = this
+
+        sourceVarName = path[0]
+        subPath = path.slice 1
+
+        variableFinder sourceVarName, (createGetter, notify) ->
+          getter = createGetter(subPath)
+          value = getter()
+
+          clear = notify ->
+            # get and compare with cached values
+            newValue = getter()
+            if newValue isnt value
+              value = newValue
+              runTemplate viewInstance, createScopeWithFinder(createBoundVariableFinder(variableFinder, subName, value, notify)), subTemplate
+
+          runTemplate viewInstance, createScopeWithFinder(createBoundVariableFinder(variableFinder, subName, value, notify)), subTemplate
+
+          { clear: clear }
+
       get: (varName) ->
-        performGet varName
+        result = undefined
+        resultNotify = undefined
+        variableFinder varName, (createGetter, notify) ->
+          result = createGetter([])()
+          resultNotify = notify
+
+        if typeof result is 'object'
+          undefined
+        else if typeof result is 'function'
+          (-> result(); resultNotify())
+        else
+          result
     }
 
   # @todo mask a top-level property and also keep track of which scope notifier it is
@@ -117,6 +141,6 @@ window.tubular = (rootModel, rootTemplate) ->
 
     undefined # prevent stray output
 
-  initialScope = createAugmentedScope ((viewInstance, subName, path, subTemplate) -> throw 'unknown path ' + path), ((varName) -> throw 'unknown variable ' + varName), '_', rootModel
+  initialScope = createScopeWithFinder(createBoundVariableFinder ((varName) -> throw 'unknown variable ' + varName), '_', rootModel, modelNotify)
 
   runTemplate Object.prototype, initialScope, rootTemplate
