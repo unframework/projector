@@ -139,8 +139,8 @@ window.tubularHtml = (viewModel, onRootElement) ->
     currentValue = null
     currentDom = @$tubularHtmlCursor()
 
-    binding = @bind '@' + variableName, -> currentValue = @get()
-    listener = => @variable variableName, !currentValue
+    binding = @bind 'value', [ variableName ], -> currentValue = @get 'value'
+    listener = => @set variableName, !currentValue
 
     currentDom.addEventListener 'click', listener, false
 

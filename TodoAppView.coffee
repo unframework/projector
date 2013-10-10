@@ -16,18 +16,18 @@ window.TodoAppTemplate = ->
 
       @element 'ul', ->
         @each '_.itemList', 'item', ->
-          #@variable 'isEdited', true
+          @declare 'isEdited', true, ->
 
-          @element 'li', ->
-            @text 'This is: {{ item.label }}'
+            @element 'li', ->
+              @text 'This is: {{ item.label }}'
 
-            @element 'a', { href: '#' }, ->
-              @text 'Update Me'
-              # @onClickToggle 'isEdited'
+              @element 'a', { href: '#' }, ->
+                @text 'Update Me'
+                @onClickToggle 'isEdited'
 
-            # @when '@isEdited', ->
-            #   @element ->
-            #     @text 'This is an edit form'
+              @when 'isEdited', ->
+                @element ->
+                  @text 'This is an edit form'
 
     @element 'a', { href: '#' }, ->
       @text 'Add Item'
