@@ -63,11 +63,10 @@ window.tubular = (rootModel, rootTemplate) ->
   createBoundVariableFinder = (parentFinder, varName, boundValue, notify) ->
     createGetter = (subPath) ->
       createPathGetter boundValue, subPath
-    setter = (-> throw 'cannot change bound variable')
 
     (name, callback) ->
       if name is varName
-        callback createGetter, notify, setter
+        callback createGetter, notify
       else
         parentFinder name, callback
 
@@ -78,11 +77,13 @@ window.tubular = (rootModel, rootTemplate) ->
         throw 'cannot bind to var subpath'
       else
         (-> varValue)
+
+    # @todo pass this back somehow
     setter = ((v) -> varValue = v)
 
     (name, callback) ->
       if name is varName
-        callback createGetter, varNotify, setter
+        callback createGetter, varNotify
       else
         parentFinder name, callback
 
@@ -125,11 +126,6 @@ window.tubular = (rootModel, rootTemplate) ->
 
       declare: (varName, initialValue, subTemplate) ->
         runTemplate this, createScopeWithFinder(createMutableVariableFinder(variableFinder, varName, initialValue)), subTemplate
-
-      set: (varName, value) ->
-        variableFinder varName, (createGetter, notify, update) ->
-          update(value)
-          notify()
     }
 
   # @todo mask a top-level property and also keep track of which scope notifier it is
