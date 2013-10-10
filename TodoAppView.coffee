@@ -16,14 +16,14 @@ window.TodoAppTemplate = ->
 
       @element 'ul', ->
         @each '_.itemList', 'item', ->
-          setter = @variable 'isEdited', true, ->
+          @variable 'isEdited', true, (setter) ->
 
             @element 'li', ->
               @text 'This is: {{ item.label }}'
 
               @element 'a', { href: '#' }, ->
                 @text 'Update Me'
-                #@onClickToggle 'isEdited'
+                @onClickToggle 'isEdited', setter
 
               @when 'isEdited', ->
                 @element ->
