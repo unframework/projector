@@ -5,10 +5,45 @@ window.TodoAppTemplate = ->
     # @todo this could be saved for later appending elsewhere, too
     document.getElementById('container').appendChild(element)
 
+  # simple menu view-model
+  createMenu = (labelList) ->
+    menu = []
+
+    setActiveItem = (index) ->
+      for t in menu
+        t.active = false
+      menu[index].active = true
+
+    createItem = (label) ->
+      index = menu.length
+      menu.push
+        label: label
+        active: false
+        activate: (-> setActiveItem index)
+
+    createItem(label) for label in labelList
+    setActiveItem 0
+
+    menu
+
   @element '.acme-container-box', {
     role: 'container'
     dataTodoItemCount: '{{ _.itemList.length }}'
   }, ->
+
+    @variable 'tabs', createMenu([ 'Main', 'Settings' ]), ->
+      @element 'ul', ->
+        @each 'tabs', 'tab', (tabIndex) ->
+          @element 'li', ->
+            @element 'a', { href: '#' }, ->
+              @text '{{ tab.label }}'
+              @onClick 'tab.activate'
+
+      @each 'tabs', 'tab', (tabIndex) ->
+        @when 'tab.active', ->
+          @element 'fieldset', ->
+            @element 'legend', ->
+              @text '{{ tab.label }}'
 
     @when '_.itemList.length', ->
       @element 'h1#sampleHeading', ->

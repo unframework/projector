@@ -219,7 +219,7 @@ window.tubularHtml = (viewModel, onRootElement) ->
         @fork {
           $tubularHtmlCursor: createCursor(currentDom, itemEndNode)
           $tubularHtmlOnDestroy: itemOnDestroy
-        }, subTemplate
+        }, (-> subTemplate.call(this, index))
 
       # provide a cleanup callback
       () ->

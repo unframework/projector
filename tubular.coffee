@@ -73,10 +73,7 @@ window.tubular = (rootModel, rootTemplate) ->
   createMutableVariableScope = (parentFinder, varName, varValue, withSetter) ->
     varNotify = createNotifier()
     createGetter = (subPath) ->
-      if subPath.length isnt 0
-        throw 'cannot bind to var subpath'
-      else
-        (-> varValue)
+      createPathGetter { v: varValue }, [ 'v' ].concat(subPath)
 
     # pass back the setter
     withSetter ((v) -> varValue = v; varNotify())
