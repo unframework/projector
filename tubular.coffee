@@ -137,7 +137,20 @@ window.tubular = (rootModel, rootTemplate) ->
           isolatedFinder = rootVariableFinder
           for name, notify of varNotifiers
             isolatedFinder = createBoundVariableFinder(isolatedFinder, name, varValues[name], notify)
-          runTemplate viewInstance, createScope(isolatedFinder), subTemplate
+
+          scope = createScope(isolatedFinder)
+          scope.yield = (map, subTemplate) ->
+            yieldFinder = variableFinder
+            for name, isolatedVarName of map
+              yieldFinder = createBoundVariableFinder(yieldFinder, name, varValues[isolatedVarName], varNotifiers[isolatedVarName])
+
+            # set up scope with augmented original variables as well as original yield method if any
+            yieldScope = createScope(yieldFinder)
+            yieldScope.yield = viewInstance.yield
+
+            runTemplate this, yieldScope, subTemplate
+
+          runTemplate viewInstance, scope, subTemplate
 
         listener = ->
           changed = false
