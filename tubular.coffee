@@ -171,7 +171,7 @@ window.tubular = (rootModel, rootTemplate) ->
 
         {
           clear: ->
-            clear() for clear in clears()
+            clear() for clear in clears
             clears = null
         }
 
