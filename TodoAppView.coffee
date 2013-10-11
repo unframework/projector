@@ -33,8 +33,10 @@ window.TodoAppTemplate = ->
 
     @isolate { 'test': [ '_', 'itemList', 'length' ], 'test2': [ '_', 'itemList', 'length' ] }, ->
       console.log  @get ['test']
-      @yield { 'yieldedTest': 'test' }, ->
-        console.log  @get(['yieldedTest']), @get([ '_', 'itemList', 'length' ])
+      @isolate { 'innerTest': [ 'test' ] }, ->
+        @yield { 'yieldedInnerTest': 'innerTest' }, ->
+          @yield { 'yieldedTest': 'yieldedInnerTest' }, ->
+            console.log  @get(['yieldedTest']), @get([ '_', 'itemList', 'length' ])
 
     @set 'tabs', createMenu([ 'Main', 'Settings' ]), ->
       @element 'ul', ->

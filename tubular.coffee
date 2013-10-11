@@ -83,7 +83,7 @@ window.tubular = (rootModel, rootTemplate) ->
       else
         parentFinder name, callback
 
-  createScope = (variableFinder) ->
+  createScope = (variableFinder, yieldFinderStack) ->
     {
       bind: (subName, path, subTemplate) ->
         viewInstance = this
@@ -100,9 +100,9 @@ window.tubular = (rootModel, rootTemplate) ->
             newValue = getter()
             if newValue isnt value
               value = newValue
-              runTemplate viewInstance, createScope(createBoundVariableFinder(variableFinder, subName, value, notify)), subTemplate
+              runTemplate viewInstance, createScope(createBoundVariableFinder(variableFinder, subName, value, notify), yieldFinderStack), subTemplate
 
-          runTemplate viewInstance, createScope(createBoundVariableFinder(variableFinder, subName, value, notify)), subTemplate
+          runTemplate viewInstance, createScope(createBoundVariableFinder(variableFinder, subName, value, notify), yieldFinderStack), subTemplate
 
           { clear: clear }
 
@@ -124,7 +124,7 @@ window.tubular = (rootModel, rootTemplate) ->
           result
 
       set: (varName, initialValue, subTemplate) ->
-        runTemplate this, createScope(createMutableVariableFinder(variableFinder, varName, initialValue)), subTemplate
+        runTemplate this, createScope(createMutableVariableFinder(variableFinder, varName, initialValue), yieldFinderStack), subTemplate
 
       isolate: (map, subTemplate) ->
         viewInstance = this
@@ -138,17 +138,7 @@ window.tubular = (rootModel, rootTemplate) ->
           for name, notify of varNotifiers
             isolatedFinder = createBoundVariableFinder(isolatedFinder, name, varValues[name], notify)
 
-          scope = createScope(isolatedFinder)
-          scope.yield = (map, subTemplate) ->
-            yieldFinder = variableFinder
-            for name, isolatedVarName of map
-              yieldFinder = createBoundVariableFinder(yieldFinder, name, varValues[isolatedVarName], varNotifiers[isolatedVarName])
-
-            # set up scope with augmented original variables as well as original yield method if any
-            yieldScope = createScope(yieldFinder)
-            yieldScope.yield = viewInstance.yield
-
-            runTemplate this, yieldScope, subTemplate
+          scope = createScope(isolatedFinder, [ variableFinder ].concat(yieldFinderStack))
 
           runTemplate viewInstance, scope, subTemplate
 
@@ -184,6 +174,22 @@ window.tubular = (rootModel, rootTemplate) ->
             clear() for clear in clears()
             clears = null
         }
+
+      yield: (map, subTemplate) ->
+        if yieldFinderStack.length < 1
+          throw 'cannot yield'
+
+        yieldFinder = yieldFinderStack[0]
+
+        for name, sourceVarName of map
+          variableFinder sourceVarName, (createGetter, notify) ->
+            yieldedValue = createGetter([])()
+            yieldFinder = createBoundVariableFinder(yieldFinder, name, yieldedValue, notify)
+
+        # set up scope with augmented original variables as well as original yield method if any
+        yieldScope = createScope(yieldFinder, yieldFinderStack.slice(1))
+
+        runTemplate this, yieldScope, subTemplate
     }
 
   # @todo mask a top-level property and also keep track of which scope notifier it is
@@ -205,6 +211,6 @@ window.tubular = (rootModel, rootTemplate) ->
 
     undefined # prevent stray output
 
-  initialScope = createScope createBoundVariableFinder(rootVariableFinder, '_', rootModel, modelNotify)
+  initialScope = createScope createBoundVariableFinder(rootVariableFinder, '_', rootModel, modelNotify), []
 
   runTemplate Object.prototype, initialScope, rootTemplate
