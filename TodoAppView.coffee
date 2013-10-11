@@ -31,8 +31,8 @@ window.TodoAppTemplate = ->
     dataTodoItemCount: '{{ _.itemList.length }}'
   }, ->
 
-    @isolate { 'test': [ '_', 'itemList' ] }, ->
-      console.log  @get ['test', 'length']
+    @isolate { 'test': [ '_', 'itemList', 'length' ], 'test2': [ '_', 'itemList', 'length' ] }, ->
+      console.log  @get ['test']
 
     @set 'tabs', createMenu([ 'Main', 'Settings' ]), ->
       @element 'ul', ->

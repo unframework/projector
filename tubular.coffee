@@ -140,12 +140,17 @@ window.tubular = (rootModel, rootTemplate) ->
           runTemplate viewInstance, createScope(isolatedFinder), subTemplate
 
         listener = ->
+          changed = false
+
           for name, getter of varGetters
             # get and compare with cached values
             newValue = getter()
             if newValue isnt varValues[name]
               varValues[name] = newValue
-              runIsolatedTemplate()
+              changed = true
+
+          if changed
+            runIsolatedTemplate()
 
         for varName, sourcePath of map
           sourceVarName = sourcePath[0]
