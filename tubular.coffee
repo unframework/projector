@@ -125,6 +125,47 @@ window.tubular = (rootModel, rootTemplate) ->
 
       set: (varName, initialValue, subTemplate) ->
         runTemplate this, createScope(createMutableVariableFinder(variableFinder, varName, initialValue)), subTemplate
+
+      isolate: (map, subTemplate) ->
+        viewInstance = this
+        varGetters = {}
+        varNotifiers = {}
+        varValues = {}
+        clears = []
+
+        runIsolatedTemplate = ->
+          isolatedFinder = rootVariableFinder
+          for name, notify of varNotifiers
+            isolatedFinder = createBoundVariableFinder(isolatedFinder, name, varValues[name], notify)
+          runTemplate viewInstance, createScope(isolatedFinder), subTemplate
+
+        listener = ->
+          for name, getter of varGetters
+            # get and compare with cached values
+            newValue = getter()
+            if newValue isnt varValues[name]
+              varValues[name] = newValue
+              runIsolatedTemplate()
+
+        for varName, sourcePath of map
+          sourceVarName = sourcePath[0]
+          subPath = sourcePath.slice 1
+
+          variableFinder sourceVarName, (createGetter, notify) ->
+            getter = createGetter(subPath)
+            varValues[varName] = getter()
+            varGetters[varName] = getter
+            varNotifiers[varName] = notify
+
+            clears.push notify(listener)
+
+        runIsolatedTemplate()
+
+        {
+          clear: ->
+            clear() for clear in clears()
+            clears = null
+        }
     }
 
   # @todo mask a top-level property and also keep track of which scope notifier it is
