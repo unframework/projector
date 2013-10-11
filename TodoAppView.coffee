@@ -31,7 +31,7 @@ window.TodoAppTemplate = ->
     dataTodoItemCount: '{{ _.itemList.length }}'
   }, ->
 
-    @variable 'tabs', createMenu([ 'Main', 'Settings' ]), ->
+    @set 'tabs', createMenu([ 'Main', 'Settings' ]), ->
       @element 'ul', ->
         @each 'tabs', 'tab', (tabIndex) ->
           @element 'li', ->
@@ -51,18 +51,11 @@ window.TodoAppTemplate = ->
 
       @element 'ul', ->
         @each '_.itemList', 'item', ->
-          @variable 'isEdited', true, (setter) ->
+          @element 'li', ->
+            @text 'This is: {{ item.label }}'
 
-            @element 'li', ->
-              @text 'This is: {{ item.label }}'
-
-              @element 'a', { href: '#' }, ->
-                @text 'Update Me'
-                @onClickToggle 'isEdited', setter
-
-              @when 'isEdited', ->
-                @element ->
-                  @text 'This is an edit form'
+            @element 'a', { href: '#' }, ->
+              @text 'Update Me'
 
     @element 'a', { href: '#' }, ->
       @text 'Add Item'

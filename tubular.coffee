@@ -70,13 +70,10 @@ window.tubular = (rootModel, rootTemplate) ->
       else
         parentFinder name, callback
 
-  createMutableVariableScope = (parentFinder, varName, varValue, withSetter) ->
+  createMutableVariableScope = (parentFinder, varName, varValue) ->
     varNotify = createNotifier()
     createGetter = (subPath) ->
-      createPathGetter { v: varValue }, [ 'v' ].concat(subPath)
-
-    # pass back the setter
-    withSetter ((v) -> varValue = v; varNotify())
+      createPathGetter varValue, subPath
 
     createScopeWithFinder (name, callback) ->
       if name is varName
@@ -124,10 +121,8 @@ window.tubular = (rootModel, rootTemplate) ->
         else
           result
 
-      variable: (varName, initialValue, subTemplate) ->
-        setter = null
-        scope = createMutableVariableScope(variableFinder, varName, initialValue, ((v) -> setter = v))
-        runTemplate this, scope, (-> subTemplate.call(this, setter))
+      set: (varName, initialValue, subTemplate) ->
+        runTemplate this, createMutableVariableScope(variableFinder, varName, initialValue), subTemplate
     }
 
   # @todo mask a top-level property and also keep track of which scope notifier it is
