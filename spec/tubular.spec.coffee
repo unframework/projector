@@ -21,6 +21,11 @@ define ['tubular'], (tubular) ->
       tubular { TEST_NAME: 'TEST_VALUE' }, ->
         expect(@get ['_', 'TEST_NAME']).toBe 'TEST_VALUE'
 
+    it 'converts nonexistent paths to undefined', ->
+      tubular { TEST_NAME: 'TEST_VALUE', TEST_NULL: null }, ->
+        expect(@get ['_', 'TEST_NAME', 'TEST_NONEXISTENT']).toBe undefined
+        expect(@get ['_', 'TEST_NULL', 'TEST_NONEXISTENT']).toBe undefined
+
     it 'disallows direct access to non-primitives', ->
       model = { n: 1, b: true, nl: null, undef: undefined }
       tubular model, ->
@@ -136,6 +141,21 @@ define ['tubular'], (tubular) ->
               expect(@get ['_', 'TEST_PROP']).toBe 'TEST_VALUE'
               expect(@get ['TEST_YIELD_VAR']).toBe 'TEST_VALUE'
 
+    it 'yields nested scope', ->
+      tubular { TEST_PROP: { v: 'TEST_VALUE' } }, ->
+        @isolate { 'TEST_VAR': ['_', 'TEST_PROP'] }, ->
+          @isolate { 'TEST_VAR2': ['TEST_VAR', 'v'] }, ->
+            expect(=> @get ['TEST_VAR']).toThrow()
+            @yield { 'TEST_YIELD_VAR': 'TEST_VAR2' }, ->
+              expect(=> @get ['_']).toThrow()
+              @yield { 'TEST_YIELD_VAR2': 'TEST_YIELD_VAR' }, ->
+                expect(=> @get ['TEST_YIELD_VAR']).toThrow()
+                expect(@get ['TEST_YIELD_VAR2']).toBe 'TEST_VALUE'
+
+    it 'prevents yield on root scope', ->
+      tubular { TEST_PROP: 'TEST_VALUE' }, ->
+        expect(=> @yield {}, ->).toThrow()
+
     it 'updates isolated scope based on change, but only once per multiple fields changed', ->
       asyncViewGets = []
       modelInvoker = null
@@ -151,3 +171,49 @@ define ['tubular'], (tubular) ->
       expect(asyncViewGets.length).toBe 2
       expect(asyncViewGets[0]()).toEqual [ 0, 0 ]
       expect(asyncViewGets[1]()).toEqual [ 1, 2 ]
+
+    it 'allows unbinding the isolated scope', ->
+      runCount = 0
+      modelInvoker = null
+      binding = null
+
+      tubular { n: 0, f: (-> @n += 1) }, ->
+        modelInvoker = @get ['_', 'f']
+        binding = @isolate { 'TEST_VAR': ['_', 'n'] }, ->
+          runCount += 1
+
+      # run after view init
+      expect(runCount).toBe 1
+
+      modelInvoker()
+      expect(runCount).toBe 2
+
+      binding.clear()
+      modelInvoker()
+      expect(runCount).toBe 2
+
+    it 'disallows unbinding twice for same isolated scope', ->
+      binding = null
+
+      tubular { n: 0 }, ->
+        binding = @isolate { 'TEST_VAR': ['_', 'n'] }, ->
+
+      # run after view init
+      binding.clear()
+
+      expect(-> binding.clear()).toThrow()
+
+    it 'forks view state', ->
+      view1 = null
+      view2 = null
+      tubular {}, ->
+        view1 = this
+        @TEST_PROP = 'TEST_VALUE'
+
+        @fork { TEST_PROP: 'VAL2' }, ->
+          view2 = this
+          @TEST_PROP2 = 'VAL3'
+
+      expect(view1.TEST_PROP).toBe 'TEST_VALUE'
+      expect(view2.TEST_PROP).toBe 'VAL2'
+      expect(view2.TEST_PROP2).toBe 'VAL3'
