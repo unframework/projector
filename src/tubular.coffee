@@ -50,10 +50,12 @@
           currentGetter = ->
             v = parentGetter()
 
-            if typeof v isnt 'object'
+            if v is null
+              undefined
+            else if typeof v isnt 'object'
               undefined
             else if typeof v[element] is 'function'
-              v[element].bind(v)
+              ((args...) -> v[element].apply(v, args))
             else
               v[element]
 
@@ -117,7 +119,7 @@
             result = createGetter(subPath)()
             resultNotify = notify
 
-          if typeof result is 'object'
+          if result isnt null and typeof result is 'object'
             undefined
           else if typeof result is 'function'
             (-> result(); resultNotify())
