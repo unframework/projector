@@ -122,7 +122,7 @@
           if result isnt null and typeof result is 'object'
             undefined
           else if typeof result is 'function'
-            (-> result(); resultNotify())
+            ((args...) -> r = result.apply(null, args); resultNotify(); r)
           else
             result
 
