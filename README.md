@@ -27,17 +27,14 @@ Minor clarifications:
 
 * there is no such core concept as "destructor" for a view - the DOM-specific logic introduces a concept of "no longer relevant" and implements the corresponding unwatching conditions
 
-Immutability
-------------
-
-The view should not be able to modify the model. The only way to truly enforce that is by only expose string, number and boolean values to the view. I.e. the framework should not expose objects or functions, and just resolve path-gets into primitives.
-
-There is already a clear mental concept of associating a specific view instance with the specific model value (of any type). This is different than Angular's scope in that the model value is the scope. One-to-one with the view instance. Binding is a way to generate a new view for every new value. So the individual strings and numbers get their own views, and the latter can get the primitive value via "get as number" or "get as string", etc, getters.
-
 View State
 ----------
 
-The view instance is already exposed as "this" in the template code. The framework code has nothing to do with that. To emulate live-bound state introduced by the *template*, we can "manually" introduce broadcasters into the view instance and then extend e.g. HTML library code to support those in addition to the regular model bindings. The prototype inheritance of views will expose the broadcaster to any forked sub-views.
+Templates access view-model state. It is a collection of variables fixed to contain specific values for that given view instance. Initially, the actual model of the app is bound to the "_" variable. The template code may choose to bind more variables - either from an existing variable path or by injecting another model as a variable. The latter allows introducing view-only state such as tabs/menus or form models.
+
+View instance is one-to-one with a view model. Since the view-model is a map of variable names to fixed values, the bind contract creates a new view if any map value changes.
+
+The view should not be able to modify the model. The framework enforces that by only exposing string, number and boolean values to the view. Path-gets resolve into primitives when possible, functions are wrapped and objects are not directly accessible.
 
 Forms and Input
 ---------------
