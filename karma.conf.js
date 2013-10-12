@@ -12,7 +12,8 @@ module.exports = function(config) {
     frameworks: ['jasmine', 'requirejs'],
 
     preprocessors: {
-      '**/*.coffee': ['coffee']
+      'src/**.coffee': ['coffee', 'coverage'],
+      'spec/**.coffee': ['coffee']
     },
 
     // list of files / patterns to load in the browser
@@ -31,7 +32,7 @@ module.exports = function(config) {
 
     // test results reporter to use
     // possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'
-    reporters: ['progress'],
+    reporters: ['progress', 'coverage'],
 
 
     // web server port
@@ -61,6 +62,10 @@ module.exports = function(config) {
     // - IE (only Windows)
     browsers: ['PhantomJS'],
 
+
+    coverageReporter: {
+      type : 'text'
+    },
 
     // If browser does not capture in given timeout [ms], kill it
     captureTimeout: 60000,
