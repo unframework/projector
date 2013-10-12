@@ -73,3 +73,81 @@ define ['tubular'], (tubular) ->
       expect(asyncViewGets.length).toBe 2
       expect(asyncViewGets[0]()).toBe 'TEST_VALUE'
       expect(asyncViewGets[1]()).toBe 'TEST_CHANGED_VALUE'
+
+    it 'does not create new view if model is unchanged', ->
+      runCount = 0
+      modelInvoker = null
+
+      tubular { TEST_PROP: 'TEST_VALUE', f: (-> @TEST_PROP = 'TEST_VALUE') }, ->
+        @bind 'TEST_VAR', ['_', 'TEST_PROP'], ->
+          runCount += 1
+
+        modelInvoker = @get ['_', 'f']
+
+      # run after view init
+      expect(runCount).toBe 1
+      modelInvoker()
+      expect(runCount).toBe 1
+
+    it 'allows unbinding the view', ->
+      runCount = 0
+      modelInvoker = null
+      binding = null
+
+      tubular { n: 0, f: (-> @n += 1) }, ->
+        modelInvoker = @get ['_', 'f']
+        binding = @bind 'TEST_VAR', ['_', 'n'], ->
+          runCount += 1
+
+      # run after view init
+      expect(runCount).toBe 1
+
+      modelInvoker()
+      expect(runCount).toBe 2
+
+      binding.clear()
+      modelInvoker()
+      expect(runCount).toBe 2
+
+    it 'disallows unbinding twice for same view', ->
+      binding = null
+
+      tubular { n: 0 }, ->
+        binding = @bind 'TEST_VAR', ['_', 'n'], ->
+
+      # run after view init
+      binding.clear()
+
+      expect(-> binding.clear()).toThrow()
+
+    it 'isolates scope', ->
+      tubular { TEST_PROP: 'TEST_VALUE' }, ->
+        @isolate { 'TEST_VAR': ['_', 'TEST_PROP'] }, ->
+          expect(=> @get ['_']).toThrow()
+          expect(@get ['TEST_VAR']).toBe 'TEST_VALUE'
+
+    it 'yields isolated scope', ->
+      tubular { TEST_PROP: 'TEST_VALUE' }, ->
+        @isolate { 'TEST_VAR': ['_', 'TEST_PROP'] }, ->
+          @set 'TEST_VAR2', {}, ->
+            @yield { 'TEST_YIELD_VAR': 'TEST_VAR' }, ->
+              expect(=> @get ['TEST_VAR']).toThrow()
+              expect(=> @get ['TEST_VAR2']).toThrow()
+              expect(@get ['_', 'TEST_PROP']).toBe 'TEST_VALUE'
+              expect(@get ['TEST_YIELD_VAR']).toBe 'TEST_VALUE'
+
+    it 'updates isolated scope based on change, but only once per multiple fields changed', ->
+      asyncViewGets = []
+      modelInvoker = null
+
+      tubular { n: 0, n2: 0, f: (-> @n += 1; @n2 += 2) }, ->
+        binding = @isolate { 'TEST_VAR': ['_', 'n'], 'TEST_VAR2': ['_', 'n2'] }, ->
+          asyncViewGets.push (=> [ @get(['TEST_VAR']), @get(['TEST_VAR2']) ])
+
+        modelInvoker = @get ['_', 'f']
+
+      # run after view init
+      modelInvoker()
+      expect(asyncViewGets.length).toBe 2
+      expect(asyncViewGets[0]()).toEqual [ 0, 0 ]
+      expect(asyncViewGets[1]()).toEqual [ 1, 2 ]

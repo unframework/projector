@@ -35,8 +35,11 @@
 
           # return a handle to be able to unwatch
           ->
-            # delayed removal for safety
-            listener[0] = null
+            if listener[0]
+              # delayed removal for safety
+              listener[0] = null
+            else
+              throw 'already unbound' # fail fast
 
     modelNotify = createNotifier()
 
@@ -205,8 +208,7 @@
           # create clean sub-view model and initialize it with given values
           runTemplate viewInstance, map, subTemplate
 
-      if preInitMap
-        viewInstance[n] = v for n, v of preInitMap
+      viewInstance[n] = v for n, v of preInitMap
 
       viewInstance.__proto__ = viewPrototype
 
