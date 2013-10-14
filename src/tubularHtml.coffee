@@ -1,6 +1,6 @@
 
 (if define? then define else ((module) -> window.tubularHtml = module()))(->
-  (viewModel, onRootElement) ->
+  install: (viewModel, onRootElement) ->
     # defensive check
     throw 'must supply root element callback' if typeof onRootElement isnt 'function'
 

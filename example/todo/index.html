@@ -4,16 +4,20 @@
     <meta charset="utf-8">
     <title>Tubular</title>
 
-    <script type="text/coffeescript" src="TodoAppView.coffee"></script>
-    <script type="text/coffeescript" src="../../src/tubular.coffee"></script>
-    <script type="text/coffeescript" src="../../src/tubularHtml.coffee"></script>
-
-    <script type="text/javascript" src="coffee-script.js"></script>
+    <script type="text/javascript">
+      require = {
+        paths: {
+          'tubular': '../../src/tubular',
+          'tubularHtml': '../../src/tubularHtml'
+        }
+      };
+    </script>
+    <script type="text/javascript" src="require.js"></script>
   </head>
   <body>
     <div id="container"></div>
     <script type="text/javascript">
-        setTimeout(function () {
+        require(['cs!tubular', 'cs!TodoAppView'], function (tubular, TodoAppTemplate) {
             tubular({
               itemList: [],
               addItem: function () {
@@ -28,7 +32,7 @@
                   this.itemList[0].label = 'updated item' + Math.round(Math.random() * 300);
               }
             }, TodoAppTemplate)
-        }, 400);
+        });
     </script>
   </body>
 </html>
