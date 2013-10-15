@@ -61,6 +61,7 @@
       elementName = null
       elementId = null
       elementClassList = []
+      elementAttributeMap = {}
 
       if options.length and typeof(options[options.length - 1]) is 'function'
         subTemplate = options.pop()
@@ -69,9 +70,12 @@
         elementName = options.shift()
 
         # parse #id and .class suffixes
-        elementName = elementName.replace /[#.][^#.]*/g, (a) ->
+        elementName = elementName.replace /[#.][^#.\[]*|\[[^\]]*\]/g, (a) ->
           if a[0] is '#'
             elementId = a.substring(1)
+          else if a[0] is '['
+            pair = a.substring(1, a.length - 1).split('=', 2)
+            elementAttributeMap[pair[0]] = if pair[1] isnt undefined then pair[1] else pair[0]
           else
             elementClassList.push a.substring(1)
 
@@ -91,7 +95,7 @@
         @$tubularHtmlOnDestroy = createBroadcast()
 
       # attribute binding
-      for o in options
+      for o in [ elementAttributeMap ].concat(options)
         for attributeName, attributeTemplate of o
           snakeCaseName = attributeName.replace /[a-z][A-Z]/g, (a) ->
             a[0] + '-' + a[1].toLowerCase()
