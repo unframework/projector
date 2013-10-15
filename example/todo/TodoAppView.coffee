@@ -1,10 +1,12 @@
 
-define ['cs!tubularHtml'], (tubularHtml) ->
+define ['cs!tubularHtml', 'cs!tubularForm'], (tubularHtml, tubularForm) ->
   ->
     tubularHtml.install this, (element) ->
       # immediately append
       # @todo this could be saved for later appending elsewhere, too
       document.getElementById('container').appendChild(element)
+
+    tubularForm.install this
 
     # simple menu view-model
     createMenu = (labelList) ->
@@ -27,18 +29,9 @@ define ['cs!tubularHtml'], (tubularHtml) ->
 
       menu
 
-    @element '.acme-container-box', {
-      role: 'container'
+    @element '.acme-container-box[role=container]', {
       dataTodoItemCount: '{{ _.itemList.length }}'
     }, ->
-
-      @isolate { 'test': [ '_', 'itemList', 'length' ], 'test2': [ '_', 'itemList', 'length' ] }, ->
-        console.log  @get ['test']
-        binding = @isolate { 'innerTest': [ 'test' ] }, ->
-          @yield { 'yieldedInnerTest': 'innerTest' }, ->
-            @yield { 'yieldedTest': 'yieldedInnerTest' }, ->
-              console.log  @get(['yieldedTest']), @get([ '_', 'itemList', 'length' ])
-        binding.clear()
 
       @set 'tabs', createMenu([ 'Main', 'Settings' ]), ->
         @element 'ul', ->
@@ -63,8 +56,21 @@ define ['cs!tubularHtml'], (tubularHtml) ->
             @element 'li', ->
               @text 'This is: {{ item.label }}'
 
-              @element 'a', { href: '#' }, ->
-                @text 'Update Me'
+              testAction = ((label, cb) -> setTimeout (-> cb('Error processing action')), 500)
+              @form { action: testAction }, [ 'itemLabel' ], ->
+                @when 'form.action.incomplete', ->
+                  @text 'Loading...'
+
+                @when 'form.action.error', ->
+                  @text '{{ form.action.error }}'
+
+                @field 'itemLabel', ->
+                  @element 'label', ->
+                    @text 'Enter new item label'
+                    @element 'input[type=text]', ->
+                      @fieldValue (=> @value())
+
+                @element 'button[type=submit]', -> @text 'Save'
 
       @element 'a', { href: '#' }, ->
         @text 'Add Item'

@@ -136,6 +136,9 @@
       @$tubularHtmlOnDestroy ->
         currentDom.removeEventListener 'click', listener
 
+    viewModel.value = () ->
+      @$tubularHtmlCursor().value
+
     viewModel.when = (path, subTemplate) ->
       self = this
       currentCondition = false # default state is false
