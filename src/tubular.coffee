@@ -44,41 +44,14 @@
 
     modelNotify = createNotifier()
 
-    # recursive getter that freezes actual path elements inside the closures
-    createPathGetter = (target, list) ->
-      createGetter = (parentGetter, index) ->
-        if index >= list.length
-          parentGetter
-        else
-          element = list[index]
-          currentGetter = ->
-            v = parentGetter()
-
-            if v is null
-              undefined
-            else if typeof v isnt 'object'
-              undefined
-            else if typeof v[element] is 'function'
-              ((args...) -> v[element].apply(v, args))
-            else
-              v[element]
-
-          createGetter currentGetter, index + 1
-
-      if typeof list is 'function'
-        list
-      else
-        createGetter (-> target), 0
-
     makeKeyValue = (k, v) ->
       kv = {}
       kv[k] = v
       kv
 
     initialScope = {
-        bind: (subName, path, subTemplate) ->
+        bind: (subName, getter, subTemplate) ->
           viewInstance = this
-          getter = createPathGetter this, path
           value = getter()
 
           clear = modelNotify ->

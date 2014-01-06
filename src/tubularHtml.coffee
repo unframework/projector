@@ -25,11 +25,36 @@
         else
           dom
 
+    # @todo fix this to be nicer
+    parseExpression = (target, expr) ->
+      if typeof expr is 'function'
+        expr
+      else
+        list = expr.split('.');
+        createGetter = (parentGetter, index) ->
+          if index >= list.length
+            parentGetter
+          else
+            element = list[index]
+            currentGetter = ->
+              v = parentGetter()
+
+              if v is null
+                undefined
+              else if typeof v isnt 'object'
+                undefined
+              else
+                v[element]
+
+            createGetter currentGetter, index + 1
+
+        createGetter (-> target), 0
+
     bindCurlyString = (view, curlyString, display) ->
       slices = []
 
       createBinding = (sliceIndex, path) ->
-        binding = view.bind 'value', path.split('.'), ->
+        binding = view.bind 'value', parseExpression(view, path), ->
           # @todo don't fire spurious displays while constructing? this is not efficient anyway
           slices[sliceIndex] = @value
           display slices.join('')
@@ -91,6 +116,7 @@
         childDom.setAttribute 'class', elementClassList.join ' '
 
       # initialize root destroy broadcast
+      # @todo random name
       if not @$tubularHtmlOnDestroy
         @$tubularHtmlOnDestroy = createBroadcast()
 
@@ -137,20 +163,20 @@
     viewModel.value = () ->
       @$tubularHtmlCursor().value
 
-    viewModel.when = (path, subTemplate) ->
+    viewModel.when = (expr, subTemplate) ->
       self = this
       currentCondition = false # default state is false
       childOnDestroy = null
 
       currentDom = @$tubularHtmlCursor()
 
-      startNode = currentDom.ownerDocument.createComment('^' + path)
-      endNode = currentDom.ownerDocument.createComment('$' + path)
+      startNode = currentDom.ownerDocument.createComment('^' + expr)
+      endNode = currentDom.ownerDocument.createComment('$' + expr)
 
       @$tubularHtmlCursor startNode
       @$tubularHtmlCursor endNode
 
-      binding = @bind 'value', path.split('.'), ->
+      binding = @bind 'value', parseExpression(this, expr), ->
         condition = !!@value # coerce to boolean
 
         if currentCondition isnt condition
@@ -183,8 +209,8 @@
     # just to show the fadeout animation instead of reusing a piece of DOM from the original list
     # doing too much guessing otherwise would trip up on cases where item content just changed and "seems" as if something
     # was removed but actually wasn't
-    viewModel.each = (pathString, itemName, subTemplate) ->
-      path = pathString.split '.'
+    viewModel.each = (expr, itemName, subTemplate) ->
+      listGetter = parseExpression(this, expr)
       currentDom = @$tubularHtmlCursor()
       endNode = currentDom.ownerDocument.createComment('...')
       items = []
@@ -201,7 +227,8 @@
 
         itemOnDestroy = null
 
-        itemBinding = @bind itemName, path.concat([ index ]), ->
+        # @todo check against nulls
+        itemBinding = @bind itemName, (-> listGetter()[index]), ->
           # clear old dom
           while itemStartNode.nextSibling isnt itemEndNode
             currentDom.removeChild(itemStartNode.nextSibling)
@@ -230,7 +257,7 @@
           currentDom.removeChild(itemStartNode)
           currentDom.removeChild(itemEndNode)
 
-      binding = @bind 'length', path.concat([ 'length' ]), ->
+      binding = @bind 'length', (-> listGetter().length), ->
         length = @length
 
         # add items
