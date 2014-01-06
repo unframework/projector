@@ -11,59 +11,13 @@ define ['tubular'], (tubular) ->
       tubular -> memberList = (n for own n, v of this)
 
       memberList.sort()
-      expect(memberList.join(',')).toBe 'bind,fork,get,set'
-
-    it 'converts nonexistent paths to undefined', ->
-      tubular ->
-        @TEST_NAME = 'TEST_VALUE'
-        @TEST_NULL = null
-
-        expect(@get ['TEST_NAME', 'TEST_NONEXISTENT']).toBe undefined
-        expect(@get ['TEST_NULL', 'TEST_NONEXISTENT']).toBe undefined
-
-    it 'gets values', ->
-      model = { n: 1, b: true, nl: null, undef: undefined }
-      tubular ->
-        for own n, v of model
-          this[n] = v
-
-        for own n, v of model
-          expect(@get [n]).toBe v
-
-      tubular -> @f = (->); expect(@get ['f']).toEqual jasmine.any(Function)
-
-    it 'binds model methods to instance', ->
-      tubular ->
-        @n = 1
-        @f = (v) -> @n += 1
-
-        method = @get ['f']
-        method()
-        expect(@get ['n']).toBe 2
-
-    it 'passes args and results to/from model methods', ->
-      tubular ->
-        @f = ((v) -> 2 + v)
-        method = @get ['f']
-        expect(method(3)).toBe 5
-
-    it 'sets new bound state', ->
-      tubular ->
-        @set 'TEST_VAR', { TEST_PROP: 'TEST_VALUE' }, ->
-          expect(@get ['TEST_VAR', 'TEST_PROP']).toBe 'TEST_VALUE'
-
-    it 'shadows existing vars with new bound state', ->
-      tubular ->
-        @_ = { TEST_PROP: 'TEST_VALUE1' }
-        @set '_', { TEST_PROP: 'TEST_VALUE2' }, ->
-          expect(@get ['_', 'TEST_PROP']).toBe 'TEST_VALUE2'
-        expect(@get ['_', 'TEST_PROP']).toBe 'TEST_VALUE1'
+      expect(memberList.join(',')).toBe 'bind,fork,refresh'
 
     it 'binds path to a variable', ->
       tubular ->
         @_ = { TEST_PROP: 'TEST_VALUE' }
         @bind 'TEST_VAR', ['_', 'TEST_PROP'], ->
-          expect(@get ['TEST_VAR']).toBe 'TEST_VALUE'
+          expect(@TEST_VAR).toBe 'TEST_VALUE'
 
     it 'creates new view when model is updated', ->
       asyncViewGets = []
@@ -72,9 +26,11 @@ define ['tubular'], (tubular) ->
       tubular ->
         @_ = { TEST_PROP: 'TEST_VALUE', f: (-> @TEST_PROP = 'TEST_CHANGED_VALUE') }
         @bind 'TEST_VAR', ['_', 'TEST_PROP'], ->
-          asyncViewGets.push (=> @get ['TEST_VAR'])
+          asyncViewGets.push (=> @TEST_VAR)
 
-        modelInvoker = @get ['_', 'f']
+        modelInvoker = =>
+          @_.f()
+          @refresh()
 
       # run after view init
       modelInvoker()
@@ -91,7 +47,9 @@ define ['tubular'], (tubular) ->
         @bind 'TEST_VAR', ['_', 'TEST_PROP'], ->
           runCount += 1
 
-        modelInvoker = @get ['_', 'f']
+        modelInvoker = =>
+          @_.f()
+          @refresh()
 
       # run after view init
       expect(runCount).toBe 1
@@ -106,7 +64,10 @@ define ['tubular'], (tubular) ->
       tubular ->
         @_ = { n: 0, f: (-> @n += 1) }
 
-        modelInvoker = @get ['_', 'f']
+        modelInvoker = =>
+          @_.f()
+          @refresh()
+
         binding = @bind 'TEST_VAR', ['_', 'n'], ->
           runCount += 1
 

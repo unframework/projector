@@ -7,7 +7,6 @@
 
       form = {
         action: null
-        refresh: (->) # dummy hook to trigger watch-list refresh @todo this better!
       }
 
       field = (name, fieldSubTemplate) ->
@@ -38,10 +37,10 @@
 
                 console.log 'submit complete', actionRequest
 
-                @get([ 'form', 'refresh' ])()
+                @refresh()
 
               form.action = actionRequest
-              @get([ 'form', 'refresh' ])()
+              @refresh()
 
               action.apply(null, argumentValues)
 

@@ -31,7 +31,7 @@
       createBinding = (sliceIndex, path) ->
         binding = view.bind 'value', path.split('.'), ->
           # @todo don't fire spurious displays while constructing? this is not efficient anyway
-          slices[sliceIndex] = @get [ 'value' ]
+          slices[sliceIndex] = @value
           display slices.join('')
 
         view.$tubularHtmlOnDestroy ->
@@ -126,9 +126,11 @@
           textNode = @$tubularHtmlCursor().ownerDocument.createTextNode(text)
           @$tubularHtmlCursor textNode
 
-    viewModel.onClick = (path) ->
+    viewModel.onClick = (callback) ->
       currentDom = @$tubularHtmlCursor()
-      listener = => (@get path.split('.'))()
+      listener = =>
+        callback()
+        @refresh()
 
       currentDom.addEventListener 'click', listener, false
 
@@ -149,7 +151,7 @@
       @$tubularHtmlCursor endNode
 
       binding = @bind 'value', path.split('.'), ->
-        condition = !!@get [ 'value' ] # coerce to boolean
+        condition = !!@value # coerce to boolean
 
         if currentCondition isnt condition
           if condition
@@ -229,7 +231,7 @@
           currentDom.removeChild(itemEndNode)
 
       binding = @bind 'length', path.concat([ 'length' ]), ->
-        length = @get [ 'length' ]
+        length = @length
 
         # add items
         while items.length < length

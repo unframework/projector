@@ -35,13 +35,13 @@ define ['cs!tubularHtml', 'cs!tubularForm'], (tubularHtml, tubularForm) ->
       dataTodoItemCount: '{{ _.itemList.length }}'
     }, ->
 
-      @set 'tabs', createMenu([ 'Main', 'Settings' ]), ->
+      @fork { tabs: createMenu([ 'Main', 'Settings' ]) }, ->
         @element 'ul', ->
           @each 'tabs', 'tab', (tabIndex) ->
             @element 'li', ->
               @element 'a', { href: '#' }, ->
                 @text '{{ tab.label }}'
-                @onClick 'tab.activate'
+                @onClick => @tab.activate()
 
         @each 'tabs', 'tab', (tabIndex) ->
           @when 'tab.active', ->
@@ -76,12 +76,12 @@ define ['cs!tubularHtml', 'cs!tubularForm'], (tubularHtml, tubularForm) ->
 
       @element 'a', { href: '#' }, ->
         @text 'Add Item'
-        @onClick '_.addItem'
+        @onClick => @_.addItem()
 
       @element 'a', { href: '#' }, ->
         @text 'Update Item'
-        @onClick '_.updateItem'
+        @onClick => @_.updateItem()
 
       @element 'a', { href: '#' }, ->
         @text 'Remove Item'
-        @onClick '_.removeItem'
+        @onClick => @_.removeItem()

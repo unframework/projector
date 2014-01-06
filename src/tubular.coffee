@@ -1,6 +1,7 @@
 
 (if define? then define else ((module) -> window.tubular = module()))(->
   (rootTemplate) ->
+    # @todo prevent recursion
     createNotifier = ->
       list = []
 
@@ -91,18 +92,7 @@
 
           { clear: clear }
 
-        get: (path) ->
-          getter = createPathGetter this, path
-          result = getter()
-          resultNotify = modelNotify
-
-          if typeof result is 'function'
-            ((args...) -> r = result.apply(null, args); resultNotify(); r)
-          else
-            result
-
-        set: (varName, initialValue, subTemplate) ->
-          runTemplate this, makeKeyValue(varName, initialValue), subTemplate
+        refresh: modelNotify
     }
 
     # @todo mask a top-level property and also keep track of which scope notifier it is
