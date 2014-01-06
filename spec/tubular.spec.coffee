@@ -16,7 +16,7 @@ define ['tubular'], (tubular) ->
     it 'binds path to a variable', ->
       tubular ->
         @_ = { TEST_PROP: 'TEST_VALUE' }
-        @bind 'TEST_VAR', ['_', 'TEST_PROP'], ->
+        @bind 'TEST_VAR', (=> @_.TEST_PROP), ->
           expect(@TEST_VAR).toBe 'TEST_VALUE'
 
     it 'creates new view when model is updated', ->
@@ -25,7 +25,7 @@ define ['tubular'], (tubular) ->
 
       tubular ->
         @_ = { TEST_PROP: 'TEST_VALUE', f: (-> @TEST_PROP = 'TEST_CHANGED_VALUE') }
-        @bind 'TEST_VAR', ['_', 'TEST_PROP'], ->
+        @bind 'TEST_VAR', (=> @_.TEST_PROP), ->
           asyncViewGets.push (=> @TEST_VAR)
 
         modelInvoker = =>
@@ -44,7 +44,7 @@ define ['tubular'], (tubular) ->
 
       tubular ->
         @_ = { TEST_PROP: 'TEST_VALUE', f: (-> @TEST_PROP = 'TEST_VALUE') }
-        @bind 'TEST_VAR', ['_', 'TEST_PROP'], ->
+        @bind 'TEST_VAR', (=> @_.TEST_PROP), ->
           runCount += 1
 
         modelInvoker = =>
@@ -62,13 +62,14 @@ define ['tubular'], (tubular) ->
       binding = null
 
       tubular ->
-        @_ = { n: 0, f: (-> @n += 1) }
+        @n = 0
+        @f = (-> @n += 1)
 
         modelInvoker = =>
-          @_.f()
+          @f()
           @refresh()
 
-        binding = @bind 'TEST_VAR', ['_', 'n'], ->
+        binding = @bind 'TEST_VAR', (=> @n), ->
           runCount += 1
 
       # run after view init
@@ -85,8 +86,7 @@ define ['tubular'], (tubular) ->
       binding = null
 
       tubular ->
-        @_ = { n: 0 }
-        binding = @bind 'TEST_VAR', ['_', 'n'], ->
+        binding = @bind 'TEST_VAR', (=> 0), ->
 
       # run after view init
       binding.clear()
