@@ -1,7 +1,7 @@
 
 define ['cs!tubularHtml', 'cs!tubularForm'], (tubularHtml, tubularForm) ->
   ->
-    this._ = window.app;
+    this.app = window.app;
 
     tubularHtml.install this, (element) ->
       # immediately append
@@ -32,7 +32,7 @@ define ['cs!tubularHtml', 'cs!tubularForm'], (tubularHtml, tubularForm) ->
       menu
 
     @element '.acme-container-box[role=container]', {
-      dataTodoItemCount: '{{ _.itemList.length }}'
+      dataTodoItemCount: '{{ app.itemList.length }}'
     }, ->
 
       @fork { tabs: createMenu([ 'Main', 'Settings' ]) }, ->
@@ -49,12 +49,12 @@ define ['cs!tubularHtml', 'cs!tubularForm'], (tubularHtml, tubularForm) ->
               @element 'legend', ->
                 @text '{{ tab.label }}'
 
-      @when '_.itemList.length', ->
+      @when 'app.itemList.length', ->
         @element 'h1#sampleHeading', ->
-          @text 'Hello, world {{ _.itemList.length }}'
+          @text 'Hello, world {{ app.itemList.length }}'
 
         @element 'ul', ->
-          @each '_.itemList', 'item', ->
+          @each 'app.itemList', 'item', ->
             @element 'li', ->
               @text 'This is: {{ item.label }}'
 
@@ -76,12 +76,12 @@ define ['cs!tubularHtml', 'cs!tubularForm'], (tubularHtml, tubularForm) ->
 
       @element 'a', { href: '#' }, ->
         @text 'Add Item'
-        @onClick => @_.addItem()
+        @onClick => @app.addItem()
 
       @element 'a', { href: '#' }, ->
         @text 'Update Item'
-        @onClick => @_.updateItem()
+        @onClick => @app.updateItem()
 
       @element 'a', { href: '#' }, ->
         @text 'Remove Item'
-        @onClick => @_.removeItem()
+        @onClick => @app.removeItem()
