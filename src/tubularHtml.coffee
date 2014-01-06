@@ -132,10 +132,6 @@
 
       currentDom.addEventListener 'click', listener, false
 
-      # clean up state
-      @$tubularHtmlOnDestroy ->
-        currentDom.removeEventListener 'click', listener
-
     viewModel.value = () ->
       @$tubularHtmlCursor().value
 
