@@ -1,6 +1,6 @@
 
 (if define? then define else ((module) -> window.tubular = module()))(->
-  (rootModel, rootTemplate) ->
+  (rootTemplate) ->
     createNotifier = ->
       list = []
 
@@ -64,139 +64,46 @@
 
           createGetter currentGetter, index + 1
 
-      createGetter (-> target), 0
+      if typeof list is 'function'
+        list
+      else
+        createGetter (-> target), 0
 
-    rootVariableFinder = ((varName) -> throw 'unknown variable ' + varName)
+    makeKeyValue = (k, v) ->
+      kv = {}
+      kv[k] = v
+      kv
 
-    createBoundVariableFinder = (parentFinder, varName, boundValue, notify) ->
-      createGetter = (subPath) ->
-        createPathGetter boundValue, subPath
-
-      (name, callback) ->
-        if name is varName
-          callback createGetter, notify
-        else
-          parentFinder name, callback
-
-    createMutableVariableFinder = (parentFinder, varName, varValue) ->
-      varNotify = createNotifier()
-      createGetter = (subPath) ->
-        createPathGetter varValue, subPath
-
-      (name, callback) ->
-        if name is varName
-          callback createGetter, varNotify
-        else
-          parentFinder name, callback
-
-    createScope = (variableFinder, yieldFinderStack) ->
-      {
+    initialScope = {
         bind: (subName, path, subTemplate) ->
           viewInstance = this
+          getter = createPathGetter this, path
+          value = getter()
 
-          sourceVarName = path[0]
-          subPath = path.slice 1
+          clear = modelNotify ->
+            # get and compare with cached values
+            newValue = getter()
+            if newValue isnt value
+              value = newValue
+              runTemplate viewInstance, makeKeyValue(subName, value), subTemplate
 
-          variableFinder sourceVarName, (createGetter, notify) ->
-            getter = createGetter(subPath)
-            value = getter()
+          runTemplate viewInstance, makeKeyValue(subName, value), subTemplate
 
-            clear = notify ->
-              # get and compare with cached values
-              newValue = getter()
-              if newValue isnt value
-                value = newValue
-                runTemplate viewInstance, createScope(createBoundVariableFinder(variableFinder, subName, value, notify), yieldFinderStack), subTemplate
-
-            runTemplate viewInstance, createScope(createBoundVariableFinder(variableFinder, subName, value, notify), yieldFinderStack), subTemplate
-
-            { clear: clear }
+          { clear: clear }
 
         get: (path) ->
-          sourceVarName = path[0]
-          subPath = path.slice 1
+          getter = createPathGetter this, path
+          result = getter()
+          resultNotify = modelNotify
 
-          result = undefined
-          resultNotify = undefined
-          variableFinder sourceVarName, (createGetter, notify) ->
-            result = createGetter(subPath)()
-            resultNotify = notify
-
-          if result isnt null and typeof result is 'object'
-            undefined
-          else if typeof result is 'function'
+          if typeof result is 'function'
             ((args...) -> r = result.apply(null, args); resultNotify(); r)
           else
             result
 
         set: (varName, initialValue, subTemplate) ->
-          runTemplate this, createScope(createMutableVariableFinder(variableFinder, varName, initialValue), yieldFinderStack), subTemplate
-
-        isolate: (map, subTemplate) ->
-          viewInstance = this
-          varGetters = {}
-          varNotifiers = {}
-          varValues = {}
-          clears = []
-
-          runIsolatedTemplate = ->
-            isolatedFinder = rootVariableFinder
-            for name, notify of varNotifiers
-              isolatedFinder = createBoundVariableFinder(isolatedFinder, name, varValues[name], notify)
-
-            scope = createScope(isolatedFinder, [ variableFinder ].concat(yieldFinderStack))
-
-            runTemplate viewInstance, scope, subTemplate
-
-          listener = ->
-            changed = false
-
-            for name, getter of varGetters
-              # get and compare with cached values
-              newValue = getter()
-              if newValue isnt varValues[name]
-                varValues[name] = newValue
-                changed = true
-
-            if changed
-              runIsolatedTemplate()
-
-          for varName, sourcePath of map
-            sourceVarName = sourcePath[0]
-            subPath = sourcePath.slice 1
-
-            variableFinder sourceVarName, (createGetter, notify) ->
-              getter = createGetter(subPath)
-              varValues[varName] = getter()
-              varGetters[varName] = getter
-              varNotifiers[varName] = notify
-
-              clears.push notify(listener)
-
-          runIsolatedTemplate()
-
-          {
-            clear: ->
-              clear() for clear in clears
-              clears = null
-          }
-
-        yield: (map, subTemplate) ->
-          if yieldFinderStack.length < 1
-            throw 'cannot yield'
-
-          yieldFinder = yieldFinderStack[0]
-
-          for name, sourceVarName of map
-            variableFinder sourceVarName, (createGetter, notify) ->
-              yieldedValue = createGetter([])()
-              yieldFinder = createBoundVariableFinder(yieldFinder, name, yieldedValue, notify)
-
-          # set up scope with augmented original variables as well as original yield method if any
-          yieldScope = createScope(yieldFinder, yieldFinderStack.slice(1))
-
-          runTemplate this, yieldScope, subTemplate
-      }
+          runTemplate this, makeKeyValue(varName, initialValue), subTemplate
+    }
 
     # @todo mask a top-level property and also keep track of which scope notifier it is
     # @todo this works exactly like before, except the bound model is not "this", but a named property, to allow access to previous scopes
@@ -215,8 +122,6 @@
       template.call(viewInstance)
 
       undefined # prevent stray output
-
-    initialScope = createScope createBoundVariableFinder(rootVariableFinder, '_', rootModel, modelNotify), []
 
     runTemplate Object.prototype, initialScope, rootTemplate
 )

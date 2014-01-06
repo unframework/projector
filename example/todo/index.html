@@ -18,21 +18,23 @@
   <body>
     <div id="container"></div>
     <script type="text/javascript">
+        var app = {
+          itemList: [],
+          addItem: function () {
+            console.log('updatin\'!')
+            this.itemList.push({ label: 'item' + Math.round(Math.random() * 300), update: function () { this.label = 'updated this item just now' } });
+          },
+          removeItem: function () {
+            this.itemList.shift();
+          },
+          updateItem: function () {
+            if (this.itemList.length)
+              this.itemList[0].label = 'updated item' + Math.round(Math.random() * 300);
+          }
+        };
+
         require(['cs!tubular', 'cs!TodoAppView'], function (tubular, TodoAppTemplate) {
-            tubular({
-              itemList: [],
-              addItem: function () {
-                console.log('updatin\'!')
-                this.itemList.push({ label: 'item' + Math.round(Math.random() * 300), update: function () { this.label = 'updated this item just now' } });
-              },
-              removeItem: function () {
-                this.itemList.shift();
-              },
-              updateItem: function () {
-                if (this.itemList.length)
-                  this.itemList[0].label = 'updated item' + Math.round(Math.random() * 300);
-              }
-            }, TodoAppTemplate)
+            tubular(TodoAppTemplate);
         });
     </script>
   </body>

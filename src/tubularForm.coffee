@@ -20,8 +20,7 @@
         }, fieldSubTemplate
 
       @element 'form[action=]', ->
-        @isolate {}, ->
-          @set 'form', form, ->
+            @form = form
             formElement = @$tubularHtmlCursor()
 
             onSubmit = (event) =>
@@ -51,8 +50,7 @@
             formElement.addEventListener 'submit', onSubmit, false
             @$tubularHtmlOnDestroy -> formElement.removeEventListener 'submit', onSubmit
 
-            @yield { 'form': 'form' }, ->
-              @fork {
-                field: field
-              }, formSubTemplate
+            @fork {
+              field: field
+            }, formSubTemplate
 )

@@ -1,6 +1,8 @@
 
 define ['cs!tubularHtml', 'cs!tubularForm'], (tubularHtml, tubularForm) ->
   ->
+    this._ = window.app;
+
     tubularHtml.install this, (element) ->
       # immediately append
       # @todo this could be saved for later appending elsewhere, too
