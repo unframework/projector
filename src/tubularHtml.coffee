@@ -160,9 +160,22 @@
 
       currentDom.addEventListener 'click', listener, false
 
+    viewModel.onSubmit = (callback) ->
+      currentDom = @$tubularHtmlCursor()
+      listener = (event) =>
+        event.preventDefault()
+
+        callback()
+        @refresh()
+
+        false
+
+      currentDom.addEventListener 'submit', listener, false
+
     viewModel.value = () ->
       @$tubularHtmlCursor().value
 
+    # @todo factor this part out
     viewModel.when = (expr, subTemplate) ->
       self = this
       currentCondition = false # default state is false

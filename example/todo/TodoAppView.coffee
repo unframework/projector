@@ -3,12 +3,31 @@ define ['cs!tubularHtml', 'cs!tubularForm'], (tubularHtml, tubularForm) ->
   ->
     this.app = window.app;
 
+    class Action
+      constructor: (@callback) ->
+        @isPending = false
+        @currentPromise = null
+
+      invoke: ->
+        promise = callback()
+
+        @isPending = true
+        @currentPromise = promise
+
+        onCompletion = =>
+          if @currentPromise is promise
+            @isPending = false
+            @currentPromise = null
+
+        if @currentPromise.then
+          @currentPromise.then onCompletion
+        else
+          onCompletion()
+
     tubularHtml.install this, (element) ->
       # immediately append
       # @todo this could be saved for later appending elsewhere, too
       document.getElementById('container').appendChild(element)
-
-    tubularForm.install this
 
     # simple menu view-model
     createMenu = (labelList) ->
@@ -59,18 +78,26 @@ define ['cs!tubularHtml', 'cs!tubularForm'], (tubularHtml, tubularForm) ->
               @text 'This is: {{ item.label }}'
 
               testAction = ((label, cb) -> setTimeout (-> cb('Error processing action')), 500)
-              @form { action: testAction }, [ 'itemLabel' ], ->
-                @when 'form.action.incomplete', ->
+
+              @element 'form[action=]', ->
+                labelGetter = null
+                @action = new tubularForm(=>
+                  testAction labelGetter()
+                )
+
+                @onSubmit =>
+                  @action.invoke()
+
+                @when 'action.isPending', ->
                   @text 'Loading...'
 
-                @when 'form.action.error', ->
-                  @text '{{ form.action.error }}'
+                @when 'action.error', ->
+                  @text '{{ action.error }}'
 
-                @field 'itemLabel', ->
-                  @element 'label', ->
-                    @text 'Enter new item label'
-                    @element 'input[type=text]', ->
-                      @fieldValue (=> @value())
+                @element 'label', ->
+                  @text 'Enter new item label'
+                  @element 'input[type=text]', ->
+                    labelGetter = (=> @value())
 
                 @element 'button[type=submit]', -> @text 'Save'
 
