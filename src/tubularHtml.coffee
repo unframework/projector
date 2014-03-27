@@ -84,9 +84,9 @@
         onRootElement childDom
 
       if subTemplate
-        @fork {
-          $tubularHtmlCursor: createCursor(childDom)
-        }, subTemplate
+        @fork ->
+          @$tubularHtmlCursor = createCursor(childDom)
+          subTemplate.call(this)
 
     viewModel.text = (getter) ->
       textNode = null
@@ -137,10 +137,10 @@
             childOnDestroy = createBroadcast()
 
             # forking the original view-model, since this one is based around the condition model value
-            self.fork {
-              $tubularHtmlCursor: createCursor(currentDom, endNode)
-              $tubularHtmlOnDestroy: childOnDestroy
-            }, subTemplate
+            self.fork ->
+              @$tubularHtmlCursor = createCursor(currentDom, endNode)
+              @$tubularHtmlOnDestroy = childOnDestroy
+              subTemplate.call(this)
           else
             while startNode.nextSibling isnt endNode
               startNode.parentNode.removeChild startNode.nextSibling # @todo optimize using local vars
@@ -191,10 +191,10 @@
 
           itemOnDestroy = createBroadcast()
 
-          @fork {
-            $tubularHtmlCursor: createCursor(currentDom, itemEndNode)
-            $tubularHtmlOnDestroy: itemOnDestroy
-          }, (-> subTemplate.call(this, index))
+          @fork ->
+            @$tubularHtmlCursor = createCursor(currentDom, itemEndNode)
+            @$tubularHtmlOnDestroy = itemOnDestroy
+            subTemplate.call(this, index)
 
         # provide a cleanup callback
         () ->

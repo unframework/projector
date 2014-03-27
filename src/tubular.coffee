@@ -49,36 +49,15 @@
       kv[k] = v
       kv
 
-    initialScope = {
-        bind: (subName, getter, subTemplate) ->
-          viewInstance = this
-          value = getter()
-
-          clear = modelNotify ->
-            # get and compare with cached values
-            newValue = getter()
-            if newValue isnt value
-              value = newValue
-              runTemplate viewInstance, makeKeyValue(subName, value), subTemplate
-
-          runTemplate viewInstance, makeKeyValue(subName, value), subTemplate
-
-          { clear: clear }
-
-        refresh: modelNotify
-    }
-
     # @todo mask a top-level property and also keep track of which scope notifier it is
     # @todo this works exactly like before, except the bound model is not "this", but a named property, to allow access to previous scopes
     # @todo this fits the idea of a model still - it's now a view-model, groomed by the template glue code for convenience
     # @todo an alternative could be to track "parent" scope name - but this just fits programmer mindset better and is more convenient and closer to the template conventions
-    runTemplate = (viewPrototype, preInitMap, template) ->
+    runTemplate = (viewPrototype, template) ->
       viewInstance =
-        fork: (map, subTemplate) ->
+        fork: (subTemplate) ->
           # create clean sub-view model and initialize it with given values
-          runTemplate viewInstance, map, subTemplate
-
-      viewInstance[n] = v for n, v of preInitMap
+          runTemplate viewInstance, subTemplate
 
       viewInstance.__proto__ = viewPrototype
 
@@ -86,5 +65,23 @@
 
       undefined # prevent stray output
 
-    runTemplate Object.prototype, initialScope, rootTemplate
+    runTemplate Object.prototype, ->
+      @bind = (subName, getter, subTemplate) ->
+        viewInstance = this
+        value = getter()
+
+        clear = modelNotify ->
+          # get and compare with cached values
+          newValue = getter()
+          if newValue isnt value
+            value = newValue
+            runTemplate viewInstance, (-> this[subName] = value; subTemplate.call(this))
+
+        runTemplate viewInstance, (-> this[subName] = value; subTemplate.call(this))
+
+        { clear: clear }
+
+      @refresh = modelNotify
+
+      runTemplate this, rootTemplate
 )

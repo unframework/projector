@@ -37,7 +37,9 @@ define ['cs!tubularHtml', 'cs!tubularForm', 'cs!tubularExpr'], (tubularHtml, tub
       dataTodoItemCount: @tmpl('{{ app.itemList.length }}')
     }, ->
 
-      @fork { tabs: createMenu([ 'Main', 'Settings' ]) }, ->
+      @fork ->
+        @tabs = createMenu([ 'Main', 'Settings' ])
+
         @element 'ul', ->
           @each @eval('tabs'), 'tab', (tabIndex) ->
             @element 'li', ->

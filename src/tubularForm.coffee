@@ -10,13 +10,14 @@
       }
 
       field = (name, fieldSubTemplate) ->
-        @fork {
-          fieldValue: (callback) ->
+        @fork ->
+          @fieldValue = (callback) ->
             if fieldGetterMap[name]
               throw 'field ' + name + ' already defined'
             else
               fieldGetterMap[name] = callback
-        }, fieldSubTemplate
+
+          fieldSubTemplate.call(this)
 
       @element 'form[action=]', ->
             @form = form
@@ -49,7 +50,7 @@
             formElement.addEventListener 'submit', onSubmit, false
             @$tubularHtmlOnDestroy -> formElement.removeEventListener 'submit', onSubmit
 
-            @fork {
-              field: field
-            }, formSubTemplate
+            @fork ->
+              @field = field
+              formSubTemplate.call(this)
 )
