@@ -1,7 +1,9 @@
 
-define ['cs!tubularHtml', 'cs!tubularForm'], (tubularHtml, tubularForm) ->
+define ['cs!tubularHtml', 'cs!tubularForm', 'cs!tubularExpr'], (tubularHtml, tubularForm, tubularExpr) ->
   ->
     this.app = window.app;
+
+    tubularExpr.install this
 
     tubularHtml.install this, (element) ->
       # immediately append
@@ -32,39 +34,39 @@ define ['cs!tubularHtml', 'cs!tubularForm'], (tubularHtml, tubularForm) ->
       menu
 
     @element '.acme-container-box[role=container]', {
-      dataTodoItemCount: '{{ app.itemList.length }}'
+      dataTodoItemCount: @tmpl('{{ app.itemList.length }}')
     }, ->
 
       @fork { tabs: createMenu([ 'Main', 'Settings' ]) }, ->
         @element 'ul', ->
-          @each 'tabs', 'tab', (tabIndex) ->
+          @each @eval('tabs'), 'tab', (tabIndex) ->
             @element 'li', ->
               @element 'a', { href: '#' }, ->
-                @text '{{ tab.label }}'
+                @text @tmpl('{{ tab.label }}')
                 @onClick => @tab.activate()
 
-        @each 'tabs', 'tab', (tabIndex) ->
-          @when 'tab.active', ->
+        @each @eval('tabs'), 'tab', (tabIndex) ->
+          @when @eval('tab.active'), ->
             @element 'fieldset', ->
               @element 'legend', ->
-                @text '{{ tab.label }}'
+                @text @tmpl('{{ tab.label }}')
 
-      @when 'app.itemList.length', ->
+      @when @eval('app.itemList.length'), ->
         @element 'h1#sampleHeading', ->
-          @text 'Hello, world {{ app.itemList.length }}'
+          @text @tmpl('Hello, world {{ app.itemList.length }}')
 
         @element 'ul', ->
-          @each 'app.itemList', 'item', ->
+          @each @eval('app.itemList'), 'item', ->
             @element 'li', ->
-              @text 'This is: {{ item.label }}'
+              @text @tmpl('This is: {{ item.label }} eh')
 
               testAction = ((label, cb) -> setTimeout (-> cb('Error processing action')), 500)
               @form { action: testAction }, [ 'itemLabel' ], ->
-                @when 'form.action.incomplete', ->
+                @when @eval('form.action.incomplete'), ->
                   @text 'Loading...'
 
-                @when 'form.action.error', ->
-                  @text '{{ form.action.error }}'
+                @when @eval('form.action.error'), ->
+                  @text @tmpl('{{ form.action.error }}')
 
                 @field 'itemLabel', ->
                   @element 'label', ->

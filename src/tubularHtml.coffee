@@ -25,61 +25,6 @@
         else
           dom
 
-    # @todo fix this to be nicer
-    parseExpression = (target, expr) ->
-      if typeof expr is 'function'
-        expr
-      else
-        list = expr.split('.');
-        createGetter = (parentGetter, index) ->
-          if index >= list.length
-            parentGetter
-          else
-            element = list[index]
-            currentGetter = ->
-              v = parentGetter()
-
-              if v is null
-                undefined
-              else if typeof v isnt 'object'
-                undefined
-              else
-                v[element]
-
-            createGetter currentGetter, index + 1
-
-        createGetter (-> target), 0
-
-    bindCurlyString = (view, curlyString, display) ->
-      slices = []
-
-      createBinding = (sliceIndex, path) ->
-        binding = view.bind 'value', parseExpression(view, path), ->
-          # @todo don't fire spurious displays while constructing? this is not efficient anyway
-          slices[sliceIndex] = @value
-          display slices.join('')
-
-        view.$tubularHtmlOnDestroy ->
-          binding.clear()
-
-      # parse static/dynamic string slices and create bindings along the way
-      re = /{{\s*(.*?)\s*}}/g
-      lastEnd = 0
-      while match = re.exec(curlyString)
-        if match.index > lastEnd
-          slices.push curlyString.substring lastEnd, match.index
-
-        slices.push null
-        createBinding slices.length - 1, match[1]
-
-        lastEnd = match.index + match[0].length
-
-      if curlyString.length > lastEnd
-        slices.push curlyString.substring lastEnd, curlyString.length
-
-      # initial display
-      display slices.join('')
-
     viewModel.element = (options...) ->
       subTemplate = null
 
@@ -122,12 +67,15 @@
 
       # attribute binding
       for o in [ elementAttributeMap ].concat(options)
-        for attributeName, attributeTemplate of o
+        for attributeName, attributeGetter of o
           snakeCaseName = attributeName.replace /[a-z][A-Z]/g, (a) ->
             a[0] + '-' + a[1].toLowerCase()
 
-          bindCurlyString this, attributeTemplate, (v) ->
-            childDom.setAttribute snakeCaseName, v
+          if typeof attributeGetter is 'function'
+            @bind 'value', attributeGetter, ->
+              childDom.setAttribute snakeCaseName, @value
+          else
+            childDom.setAttribute snakeCaseName, attributeGetter
 
       # if first element ever created, report it for external consumption, otherwise just append
       if @$tubularHtmlCursor
@@ -140,17 +88,22 @@
           $tubularHtmlCursor: createCursor(childDom)
         }, subTemplate
 
-    viewModel.text = (curlyString) ->
+    viewModel.text = (getter) ->
       textNode = null
+      cursor = @$tubularHtmlCursor
 
-      bindCurlyString this, curlyString, (text) =>
-        if textNode
-          newNode = textNode.ownerDocument.createTextNode(text)
-          textNode.parentNode.replaceChild(newNode, textNode)
-          textNode = newNode
-        else
-          textNode = @$tubularHtmlCursor().ownerDocument.createTextNode(text)
-          @$tubularHtmlCursor textNode
+      if typeof getter isnt 'function'
+        textNode = @$tubularHtmlCursor().ownerDocument.createTextNode(getter)
+        @$tubularHtmlCursor textNode
+      else
+        @bind 'text', getter, ->
+          if textNode
+            newNode = textNode.ownerDocument.createTextNode(@text)
+            textNode.parentNode.replaceChild(newNode, textNode)
+            textNode = newNode
+          else
+            textNode = cursor().ownerDocument.createTextNode(@text)
+            cursor textNode
 
     viewModel.onClick = (callback) ->
       currentDom = @$tubularHtmlCursor()
@@ -176,7 +129,7 @@
       @$tubularHtmlCursor startNode
       @$tubularHtmlCursor endNode
 
-      binding = @bind 'value', parseExpression(this, expr), ->
+      binding = @bind 'value', expr, ->
         condition = !!@value # coerce to boolean
 
         if currentCondition isnt condition
@@ -210,7 +163,7 @@
     # doing too much guessing otherwise would trip up on cases where item content just changed and "seems" as if something
     # was removed but actually wasn't
     viewModel.each = (expr, itemName, subTemplate) ->
-      listGetter = parseExpression(this, expr)
+      listGetter = expr
       currentDom = @$tubularHtmlCursor()
       endNode = currentDom.ownerDocument.createComment('...')
       items = []
