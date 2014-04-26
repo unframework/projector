@@ -44,44 +44,40 @@
 
     modelNotify = createNotifier()
 
-    makeKeyValue = (k, v) ->
-      kv = {}
-      kv[k] = v
-      kv
+    initializeScope = (parentNotify) ->
+      subNotify = createNotifier()
+      subClear = parentNotify subNotify
 
-    # @todo mask a top-level property and also keep track of which scope notifier it is
-    # @todo this works exactly like before, except the bound model is not "this", but a named property, to allow access to previous scopes
-    # @todo this fits the idea of a model still - it's now a view-model, groomed by the template glue code for convenience
-    # @todo an alternative could be to track "parent" scope name - but this just fits programmer mindset better and is more convenient and closer to the template conventions
-    runTemplate = (viewPrototype, template) ->
-      viewInstance =
-        fork: (subTemplate) ->
-          # create clean sub-view model and initialize it with given values
-          runTemplate viewInstance, subTemplate
-
-      viewInstance.__proto__ = viewPrototype
-
-      template.call(viewInstance)
-
-      undefined # prevent stray output
-
-    runTemplate Object.prototype, ->
-      @bind = (subName, getter, subTemplate) ->
-        viewInstance = this
+      @watch = (getter, subTemplate) ->
         value = getter()
+        viewInstance = this
 
-        clear = modelNotify ->
+        subNotify =>
           # get and compare with cached values
           newValue = getter()
           if newValue isnt value
             value = newValue
-            runTemplate viewInstance, (-> this[subName] = value; subTemplate.call(this))
+            @fork (-> subTemplate.call this, value)
 
-        runTemplate viewInstance, (-> this[subName] = value; subTemplate.call(this))
+        @fork (-> subTemplate.call this, value)
 
-        { clear: clear }
+      @scope = ->
+        initializeScope.call this, subNotify
 
-      @refresh = modelNotify
+      subClear
 
-      runTemplate this, rootTemplate
+    rootView =
+      fork: (subTemplate) ->
+        # create clean sub-view model and initialize it with given values
+        subView = {}
+        subView.__proto__ = this
+
+        subTemplate.call subView
+        undefined # prevent stray output
+
+      refresh: (-> modelNotify()) # only allow invoking notification mode
+
+    initializeScope.call rootView, modelNotify
+
+    rootTemplate.call rootView
 )
