@@ -60,11 +60,6 @@
       if elementClassList.length
         childDom.setAttribute 'class', elementClassList.join ' '
 
-      # initialize root destroy broadcast
-      # @todo random name
-      if not @$tubularHtmlOnDestroy
-        @$tubularHtmlOnDestroy = createBroadcast()
-
       # attribute binding
       for o in [ elementAttributeMap ].concat(options)
         for attributeName, attributeGetter of o
@@ -72,8 +67,8 @@
             a[0] + '-' + a[1].toLowerCase()
 
           if typeof attributeGetter is 'function'
-            @bind 'value', attributeGetter, ->
-              childDom.setAttribute snakeCaseName, @value
+            @watch attributeGetter, (v) ->
+              childDom.setAttribute snakeCaseName, v
           else
             childDom.setAttribute snakeCaseName, attributeGetter
 
@@ -96,13 +91,13 @@
         textNode = @$tubularHtmlCursor().ownerDocument.createTextNode(getter)
         @$tubularHtmlCursor textNode
       else
-        @bind 'text', getter, ->
+        @watch getter, (v) ->
           if textNode
-            newNode = textNode.ownerDocument.createTextNode(@text)
+            newNode = textNode.ownerDocument.createTextNode(v)
             textNode.parentNode.replaceChild(newNode, textNode)
             textNode = newNode
           else
-            textNode = cursor().ownerDocument.createTextNode(@text)
+            textNode = cursor().ownerDocument.createTextNode(v)
             cursor textNode
 
     viewModel.onClick = (callback) ->
@@ -117,44 +112,27 @@
       @$tubularHtmlCursor().value
 
     viewModel.when = (expr, subTemplate) ->
-      self = this
-      currentCondition = false # default state is false
-      childOnDestroy = null
+      destroy = null
 
       currentDom = @$tubularHtmlCursor()
-
       startNode = currentDom.ownerDocument.createComment('^' + expr)
       endNode = currentDom.ownerDocument.createComment('$' + expr)
 
       @$tubularHtmlCursor startNode
       @$tubularHtmlCursor endNode
 
-      binding = @bind 'value', expr, ->
-        condition = !!@value # coerce to boolean
+      # @todo see if this can be made universal? need a hook to destroy immediate children
+      # something like onDestroy but does not propagate down to grandchildren
+      @watch (-> !!expr()), (condition) ->
+        if condition
+          destroy = @scope ->
+            @$tubularHtmlCursor = createCursor(currentDom, endNode)
+            subTemplate.call(this)
+        else if destroy isnt null
+          destroy()
 
-        if currentCondition isnt condition
-          if condition
-            childOnDestroy = createBroadcast()
-
-            # forking the original view-model, since this one is based around the condition model value
-            self.fork ->
-              @$tubularHtmlCursor = createCursor(currentDom, endNode)
-              @$tubularHtmlOnDestroy = childOnDestroy
-              subTemplate.call(this)
-          else
-            while startNode.nextSibling isnt endNode
-              startNode.parentNode.removeChild startNode.nextSibling # @todo optimize using local vars
-
-            childOnDestroy()
-
-          currentCondition = condition
-
-      # clear binding when destroying, and clean up child
-      @$tubularHtmlOnDestroy ->
-        binding.clear()
-
-        if currentCondition
-          childOnDestroy()
+          while startNode.nextSibling isnt endNode
+            startNode.parentNode.removeChild startNode.nextSibling # @todo optimize using local vars
 
     # @todo we can't overthink the array state diff tracking logic (e.g. "item inserted" or "item removed")
     # because ultimately, that sort of event information should come from the model itself
@@ -178,41 +156,38 @@
         loopCursor itemStartNode
         loopCursor itemEndNode
 
-        itemOnDestroy = null
-
-        # @todo check against nulls
-        itemBinding = @bind itemName, (-> listGetter()[index]), ->
+        cleanupDom = ->
           # clear old dom
           while itemStartNode.nextSibling isnt itemEndNode
             currentDom.removeChild(itemStartNode.nextSibling)
 
-          if itemOnDestroy
-            itemOnDestroy()
+        # @todo check against nulls
+        scopeDestroy = @scope ->
+          innerScopeDestroy = null
 
-          itemOnDestroy = createBroadcast()
+          @watch (-> listGetter()[index]), (v) ->
+            if innerScopeDestroy isnt null
+              innerScopeDestroy()
 
-          @fork ->
-            @$tubularHtmlCursor = createCursor(currentDom, itemEndNode)
-            @$tubularHtmlOnDestroy = itemOnDestroy
-            subTemplate.call(this, index)
+            cleanupDom()
+
+            innerScopeDestroy = @scope ->
+              this[itemName] = v;
+
+              # assign cursor last to prevent name clash
+              @$tubularHtmlCursor = createCursor(currentDom, itemEndNode)
+
+              subTemplate.call(this, index)
 
         # provide a cleanup callback
         () ->
-          itemBinding.clear()
+          scopeDestroy()
 
-          if itemOnDestroy
-            itemOnDestroy()
-
-          # clean up DOM immediately
-          while itemStartNode.nextSibling isnt itemEndNode
-            currentDom.removeChild(itemStartNode.nextSibling)
-
+          cleanupDom()
           currentDom.removeChild(itemStartNode)
           currentDom.removeChild(itemEndNode)
 
-      binding = @bind 'length', (-> listGetter().length), ->
-        length = @length
-
+      @watch (-> listGetter().length), (length) ->
         # add items
         while items.length < length
           items.push createItemSlot(items.length)
@@ -221,9 +196,4 @@
         while items.length > length
           itemCleanup = items.pop()
           itemCleanup()
-
-      # clear bindings when destroying, and clean up items
-      @$tubularHtmlOnDestroy ->
-        binding.clear()
-        itemCleanup() for itemCleanup in items
 )

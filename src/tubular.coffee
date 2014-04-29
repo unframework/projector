@@ -45,14 +45,14 @@
     modelNotify = createNotifier()
 
     initializeScope = (parentNotify) ->
-      subNotify = createNotifier()
-      subClear = parentNotify subNotify
+      scopeNotify = createNotifier()
+      scopeClear = parentNotify scopeNotify
 
       @watch = (getter, subTemplate) ->
         value = getter()
         viewInstance = this
 
-        subNotify =>
+        scopeNotify =>
           # get and compare with cached values
           newValue = getter()
           if newValue isnt value
@@ -61,14 +61,21 @@
 
         @fork (-> subTemplate.call this, value)
 
-      @scope = ->
-        initializeScope.call this, subNotify
+      @scope = (subTemplate) ->
+        subClear = null
 
-      subClear
+        @fork ->
+          subClear = initializeScope.call this, scopeNotify
+          subTemplate.call this
+
+        subClear
+
+      scopeClear
 
     rootView =
       fork: (subTemplate) ->
         # create clean sub-view model and initialize it with given values
+        # @todo use Object.create
         subView = {}
         subView.__proto__ = this
 

@@ -48,7 +48,6 @@
               false
 
             formElement.addEventListener 'submit', onSubmit, false
-            @$tubularHtmlOnDestroy -> formElement.removeEventListener 'submit', onSubmit
 
             @fork ->
               @field = field
