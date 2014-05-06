@@ -1,8 +1,17 @@
 
-define ['tubular'], (tubular) ->
+define ['tubular', 'text!tubular.js' ], (tubular, tubularSrc) ->
 
   describe 'tubular', ->
     it 'does not define a global in the AMD environment', ->
+      expect(window.tubular).toBe undefined
+
+    it 'defines a global in a non-AMD environment', ->
+      # @todo this better?
+      fakeScope = { define: null, window: {} }
+      `with (fakeScope) { eval(tubularSrc) }`
+      expect(fakeScope.window.tubular).not.toBe undefined
+
+      # extra check to make sure there was no global exposure
       expect(window.tubular).toBe undefined
 
     it 'defines only the scope-related methods + fork for template consumption', ->
@@ -11,87 +20,113 @@ define ['tubular'], (tubular) ->
       tubular -> memberList = (n for own n, v of this)
 
       memberList.sort()
-      expect(memberList.join(',')).toBe 'bind,fork,refresh'
+      expect(memberList.join(',')).toBe 'fork,refresh,scope,watch'
 
-    it 'binds path to a variable', ->
+    it 'runs watcher immediately with the watched value', ->
       tubular ->
         @_ = { TEST_PROP: 'TEST_VALUE' }
-        @bind 'TEST_VAR', (=> @_.TEST_PROP), ->
-          expect(@TEST_VAR).toBe 'TEST_VALUE'
+        r = null
+        @watch (=> @_.TEST_PROP), (v) ->
+          r = v
+        expect(r).toBe 'TEST_VALUE'
 
-    it 'creates new view when model is updated', ->
-      asyncViewGets = []
-      modelInvoker = null
-
-      tubular ->
-        @_ = { TEST_PROP: 'TEST_VALUE', f: (-> @TEST_PROP = 'TEST_CHANGED_VALUE') }
-        @bind 'TEST_VAR', (=> @_.TEST_PROP), ->
-          asyncViewGets.push (=> @TEST_VAR)
-
-        modelInvoker = =>
-          @_.f()
-          @refresh()
-
-      # run after view init
-      modelInvoker()
-      expect(asyncViewGets.length).toBe 2
-      expect(asyncViewGets[0]()).toBe 'TEST_VALUE'
-      expect(asyncViewGets[1]()).toBe 'TEST_CHANGED_VALUE'
-
-    it 'does not create new view if model is unchanged', ->
-      runCount = 0
-      modelInvoker = null
+    it 'creates new view when watched model is updated', ->
+      subViews = []
+      root = null
 
       tubular ->
-        @_ = { TEST_PROP: 'TEST_VALUE', f: (-> @TEST_PROP = 'TEST_VALUE') }
-        @bind 'TEST_VAR', (=> @_.TEST_PROP), ->
-          runCount += 1
+        root = this
 
-        modelInvoker = =>
-          @_.f()
-          @refresh()
+        @watch (=> Math.random()), (v) ->
+          subViews.push this
 
       # run after view init
-      expect(runCount).toBe 1
-      modelInvoker()
-      expect(runCount).toBe 1
+      root.refresh()
 
-    it 'allows unbinding the view', ->
-      runCount = 0
-      modelInvoker = null
-      binding = null
+      expect(subViews.length).toBe 2
+      expect(subViews[0]).not.toBe subViews[1]
+      expect(subViews[0]).not.toBe root
+      expect(subViews[1]).not.toBe root
+
+    it 'reports watched value when it changes', ->
+      values = []
+      root = null
 
       tubular ->
-        @n = 0
-        @f = (-> @n += 1)
+        root = this
 
-        modelInvoker = =>
-          @f()
-          @refresh()
+        @TEST_PROP = 'TEST_VALUE'
 
-        binding = @bind 'TEST_VAR', (=> @n), ->
-          runCount += 1
+        @watch (=> @TEST_PROP), (v) ->
+          values.push v
 
       # run after view init
-      expect(runCount).toBe 1
+      root.TEST_PROP = 'TEST_CHANGED_VALUE'
+      root.refresh()
 
-      modelInvoker()
-      expect(runCount).toBe 2
+      expect(values.length).toBe 2
+      expect(values[0]).toBe 'TEST_VALUE'
+      expect(values[1]).toBe 'TEST_CHANGED_VALUE'
 
-      binding.clear()
-      modelInvoker()
-      expect(runCount).toBe 2
-
-    it 'disallows unbinding twice for same view', ->
-      binding = null
+    it 'does not invoke watch view when watched value does not change', ->
+      values = []
+      root = null
 
       tubular ->
-        binding = @bind 'TEST_VAR', (=> 0), ->
+        root = this
+
+        @TEST_PROP = 'TEST_VALUE'
+
+        @watch (=> @TEST_PROP), (v) ->
+          values.push v
 
       # run after view init
-      binding.clear()
+      root.refresh()
 
-      expect(-> binding.clear()).toThrow()
+      expect(values.length).toBe 1
+      expect(values[0]).toBe 'TEST_VALUE'
+
+    it 'creates a sub-scope', ->
+      root = null
+      sub = null
+
+      tubular ->
+        root = this
+        @scope ->
+          sub = this
+
+      expect(sub).not.toBe root
+
+    it 'allows unbinding the sub-scope', ->
+      values = []
+      root = null
+      scopeClear = null
+
+      tubular ->
+        root = this
+
+        @TEST_PROP = 'TEST_VALUE'
+
+        scopeClear = @scope ->
+          @watch (=> @TEST_PROP), (v) ->
+            values.push v
+
+      # run after view init
+      scopeClear()
+      root.TEST_PROP = 'TEST_CHANGED_VALUE'
+      root.refresh()
+
+      expect(values.length).toBe 1
+      expect(values[0]).toBe 'TEST_VALUE'
+
+    it 'disallows unbinding same sub-scope twice', ->
+      scopeClear = null
+
+      tubular ->
+        scopeClear = @scope (->)
+
+      scopeClear()
+      expect(-> scopeClear()).toThrow()
 
     it 'forks view state', ->
       view1 = null
@@ -100,8 +135,9 @@ define ['tubular'], (tubular) ->
         view1 = this
         @TEST_PROP = 'TEST_VALUE'
 
-        @fork { TEST_PROP: 'VAL2' }, ->
+        @fork ->
           view2 = this
+          @TEST_PROP = 'VAL2'
           @TEST_PROP2 = 'VAL3'
 
       expect(view1.TEST_PROP).toBe 'TEST_VALUE'
