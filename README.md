@@ -1,6 +1,6 @@
 
-Lean View Framework
-===================
+Lean Reactive View Framework
+============================
 
 Simple concept:
 
@@ -10,8 +10,8 @@ This library is meant to quickly build views around models and view-models (MVVM
 
 Features:
 
-* AngularJS style model/scope binding, prototype inheritance
-* hierarchical, ERB style yield (via callbacks)
+* AngularJS style reactive model/scope binding
+* hierarchical (view prototype inheritance), ERB style yield (via callbacks)
 * comfortable syntax: simple, concise real Javascript/CoffeeScript
 * everything is an optional addon, including HTML support (`<canvas>` scenegraph in the works)
 * nothing else
