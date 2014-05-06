@@ -28,8 +28,6 @@
           # truncate compacted listener list (preserving any watches that have been added during this run)
           list.splice(compactedCount, count - compactedCount)
 
-          console.log 'watch count', list.length
-
         else
           listener = [ callback ]
           list.push listener
