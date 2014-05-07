@@ -12,7 +12,7 @@ module.exports = function(config) {
     frameworks: ['jasmine', 'requirejs'],
 
     preprocessors: {
-      'src/**.coffee': ['coffee', 'coverage'],
+      'src/**.coffee': ['coffee'],
       'spec/**.coffee': ['coffee']
     },
 
@@ -33,7 +33,7 @@ module.exports = function(config) {
 
     // test results reporter to use
     // possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'
-    reporters: ['progress', 'coverage'],
+    reporters: ['progress'],
 
 
     // web server port
