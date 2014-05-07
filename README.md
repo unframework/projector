@@ -1,6 +1,7 @@
 
-Lean Reactive View Framework
-============================
+# Projector
+
+## Lean Reactive View Framework
 
 Simple concept:
 
