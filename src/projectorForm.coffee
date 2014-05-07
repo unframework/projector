@@ -1,5 +1,5 @@
 
-(if define? then define else ((module) -> window.tubularHtml = module()))(->
+(if define? then define else ((module) -> window.projectorHtml = module()))(->
   install: (viewModel) ->
     viewModel.form = (options, actionArgumentList, formSubTemplate) ->
       action = options.action
@@ -21,7 +21,7 @@
 
       @element 'form[action=]', ->
             @form = form
-            formElement = @$tubularHtmlCursor()
+            formElement = @$projectorHtmlCursor()
 
             onSubmit = (event) =>
               event.preventDefault()

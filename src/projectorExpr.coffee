@@ -1,5 +1,5 @@
 
-(if define? then define else ((module) -> window.tubularExpr = module()))(->
+(if define? then define else ((module) -> window.projectorExpr = module()))(->
   install: (viewModel) ->
     parseExpression = (target, expr) ->
       list = expr.split('.')

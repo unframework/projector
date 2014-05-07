@@ -1,5 +1,5 @@
 
-(if define? then define else ((module) -> window.tubular = module()))(->
+(if define? then define else ((module) -> window.projector = module()))(->
   (rootTemplate) ->
     # @todo prevent recursion
     createNotifier = ->

@@ -1,16 +1,16 @@
 
-define ['cs!tubularHtml', 'cs!tubularForm', 'cs!tubularExpr'], (tubularHtml, tubularForm, tubularExpr) ->
+define ['cs!projectorHtml', 'cs!projectorForm', 'cs!projectorExpr'], (projectorHtml, projectorForm, projectorExpr) ->
   ->
     this.app = window.app;
 
-    tubularExpr.install this
+    projectorExpr.install this
 
-    tubularHtml.install this, (element) ->
+    projectorHtml.install this, (element) ->
       # immediately append
       # @todo this could be saved for later appending elsewhere, too
       document.getElementById('container').appendChild(element)
 
-    tubularForm.install this
+    projectorForm.install this
 
     # simple menu view-model
     createMenu = (labelList) ->

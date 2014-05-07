@@ -1,5 +1,5 @@
 
-(if define? then define else ((module) -> window.tubularHtml = module()))(->
+(if define? then define else ((module) -> window.projectorHtml = module()))(->
   install: (viewModel, onRootElement) ->
     # defensive check
     throw 'must supply root element callback' if typeof onRootElement isnt 'function'
@@ -51,7 +51,7 @@
 
           '' # strip suffix from original name
 
-      ownerDocument = if @$tubularHtmlCursor then @$tubularHtmlCursor().ownerDocument else document
+      ownerDocument = if @$projectorHtmlCursor then @$projectorHtmlCursor().ownerDocument else document
       childDom = ownerDocument.createElement(elementName or 'div')
 
       if elementId isnt null # still trigger for empty ID string
@@ -73,23 +73,23 @@
             childDom.setAttribute snakeCaseName, attributeGetter
 
       # if first element ever created, report it for external consumption, otherwise just append
-      if @$tubularHtmlCursor
-        @$tubularHtmlCursor childDom
+      if @$projectorHtmlCursor
+        @$projectorHtmlCursor childDom
       else
         onRootElement childDom
 
       if subTemplate
         @fork ->
-          @$tubularHtmlCursor = createCursor(childDom)
+          @$projectorHtmlCursor = createCursor(childDom)
           subTemplate.call(this)
 
     viewModel.text = (getter) ->
       textNode = null
-      cursor = @$tubularHtmlCursor
+      cursor = @$projectorHtmlCursor
 
       if typeof getter isnt 'function'
-        textNode = @$tubularHtmlCursor().ownerDocument.createTextNode(getter)
-        @$tubularHtmlCursor textNode
+        textNode = @$projectorHtmlCursor().ownerDocument.createTextNode(getter)
+        @$projectorHtmlCursor textNode
       else
         @watch getter, (v) ->
           if textNode
@@ -101,32 +101,33 @@
             cursor textNode
 
     viewModel.onClick = (callback) ->
-      currentDom = @$tubularHtmlCursor()
+      currentDom = @$projectorHtmlCursor()
       listener = =>
         callback()
         @refresh()
 
+      # @todo check if element is being transitioned out
       currentDom.addEventListener 'click', listener, false
 
     viewModel.value = () ->
-      @$tubularHtmlCursor().value
+      @$projectorHtmlCursor().value
 
     viewModel.when = (expr, subTemplate) ->
       destroy = null
 
-      currentDom = @$tubularHtmlCursor()
+      currentDom = @$projectorHtmlCursor()
       startNode = currentDom.ownerDocument.createComment('^' + expr)
       endNode = currentDom.ownerDocument.createComment('$' + expr)
 
-      @$tubularHtmlCursor startNode
-      @$tubularHtmlCursor endNode
+      @$projectorHtmlCursor startNode
+      @$projectorHtmlCursor endNode
 
       # @todo see if this can be made universal? need a hook to destroy immediate children
       # something like onDestroy but does not propagate down to grandchildren
       @watch (-> !!expr()), (condition) ->
         if condition
           destroy = @scope ->
-            @$tubularHtmlCursor = createCursor(currentDom, endNode)
+            @$projectorHtmlCursor = createCursor(currentDom, endNode)
             subTemplate.call(this)
         else if destroy isnt null
           destroy()
@@ -142,11 +143,11 @@
     # was removed but actually wasn't
     viewModel.each = (expr, itemName, subTemplate) ->
       listGetter = expr
-      currentDom = @$tubularHtmlCursor()
+      currentDom = @$projectorHtmlCursor()
       endNode = currentDom.ownerDocument.createComment('...')
       items = []
 
-      @$tubularHtmlCursor endNode
+      @$projectorHtmlCursor endNode
 
       loopCursor = createCursor(currentDom, endNode)
 
@@ -175,7 +176,7 @@
               this[itemName] = v;
 
               # assign cursor last to prevent name clash
-              @$tubularHtmlCursor = createCursor(currentDom, itemEndNode)
+              @$projectorHtmlCursor = createCursor(currentDom, itemEndNode)
 
               subTemplate.call(this, index)
 

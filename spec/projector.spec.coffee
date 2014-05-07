@@ -1,29 +1,29 @@
 
-define ['tubular', 'text!tubular.js' ], (tubular, tubularSrc) ->
+define ['projector', 'text!projector.js' ], (projector, projectorSrc) ->
 
-  describe 'tubular', ->
+  describe 'projector', ->
     it 'does not define a global in the AMD environment', ->
-      expect(window.tubular).toBe undefined
+      expect(window.projector).toBe undefined
 
     it 'defines a global in a non-AMD environment', ->
       # @todo this better?
       fakeScope = { define: null, window: {} }
-      `with (fakeScope) { eval(tubularSrc) }`
-      expect(fakeScope.window.tubular).not.toBe undefined
+      `with (fakeScope) { eval(projectorSrc) }`
+      expect(fakeScope.window.projector).not.toBe undefined
 
       # extra check to make sure there was no global exposure
-      expect(window.tubular).toBe undefined
+      expect(window.projector).toBe undefined
 
     it 'defines only the scope-related methods + fork for template consumption', ->
       # this would not be done normally, but "clean object" is part of the spec
       memberList = null
-      tubular -> memberList = (n for own n, v of this)
+      projector -> memberList = (n for own n, v of this)
 
       memberList.sort()
       expect(memberList.join(',')).toBe 'fork,refresh,scope,watch'
 
     it 'runs watcher immediately with the watched value', ->
-      tubular ->
+      projector ->
         @_ = { TEST_PROP: 'TEST_VALUE' }
         r = null
         @watch (=> @_.TEST_PROP), (v) ->
@@ -34,7 +34,7 @@ define ['tubular', 'text!tubular.js' ], (tubular, tubularSrc) ->
       subViews = []
       root = null
 
-      tubular ->
+      projector ->
         root = this
 
         @watch (=> Math.random()), (v) ->
@@ -52,7 +52,7 @@ define ['tubular', 'text!tubular.js' ], (tubular, tubularSrc) ->
       values = []
       root = null
 
-      tubular ->
+      projector ->
         root = this
 
         @TEST_PROP = 'TEST_VALUE'
@@ -72,7 +72,7 @@ define ['tubular', 'text!tubular.js' ], (tubular, tubularSrc) ->
       values = []
       root = null
 
-      tubular ->
+      projector ->
         root = this
 
         @TEST_PROP = 'TEST_VALUE'
@@ -90,7 +90,7 @@ define ['tubular', 'text!tubular.js' ], (tubular, tubularSrc) ->
       root = null
       sub = null
 
-      tubular ->
+      projector ->
         root = this
         @scope ->
           sub = this
@@ -102,7 +102,7 @@ define ['tubular', 'text!tubular.js' ], (tubular, tubularSrc) ->
       root = null
       scopeClear = null
 
-      tubular ->
+      projector ->
         root = this
 
         @TEST_PROP = 'TEST_VALUE'
@@ -122,7 +122,7 @@ define ['tubular', 'text!tubular.js' ], (tubular, tubularSrc) ->
     it 'disallows unbinding same sub-scope twice', ->
       scopeClear = null
 
-      tubular ->
+      projector ->
         scopeClear = @scope (->)
 
       scopeClear()
@@ -131,7 +131,7 @@ define ['tubular', 'text!tubular.js' ], (tubular, tubularSrc) ->
     it 'forks view state', ->
       view1 = null
       view2 = null
-      tubular ->
+      projector ->
         view1 = this
         @TEST_PROP = 'TEST_VALUE'
 

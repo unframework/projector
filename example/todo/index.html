@@ -7,10 +7,10 @@
     <script type="text/javascript">
       require = {
         paths: {
-          'tubular': '../../src/tubular',
-          'tubularExpr': '../../src/tubularExpr',
-          'tubularHtml': '../../src/tubularHtml',
-          'tubularForm': '../../src/tubularForm'
+          'projector': '../../src/projector',
+          'projectorExpr': '../../src/projectorExpr',
+          'projectorHtml': '../../src/projectorHtml',
+          'projectorForm': '../../src/projectorForm'
         }
       };
     </script>
@@ -34,8 +34,8 @@
           }
         };
 
-        require(['cs!tubular', 'cs!TodoAppView'], function (tubular, TodoAppTemplate) {
-            tubular(TodoAppTemplate);
+        require(['cs!projector', 'cs!TodoAppView'], function (projector, TodoAppTemplate) {
+            projector(TodoAppTemplate);
         });
     </script>
   </body>
