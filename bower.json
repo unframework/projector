@@ -6,6 +6,7 @@
     ".*",
     "spec",
     "example",
+    "package.json",
     "karma.conf.js"
   ]
 }
