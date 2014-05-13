@@ -1,0 +1,11 @@
+{
+  "name": "projector",
+  "version": "0.1.0",
+
+  "ignore": [
+    ".*",
+    "spec",
+    "example",
+    "karma.conf.js"
+  ]
+}
