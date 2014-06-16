@@ -68,7 +68,10 @@
 
           if typeof attributeGetter is 'function'
             @watch attributeGetter, (v) ->
-              childDom.setAttribute snakeCaseName, v
+              if v is null
+                childDom.removeAttribute snakeCaseName
+              else
+                childDom.setAttribute snakeCaseName, v
           else
             childDom.setAttribute snakeCaseName, attributeGetter
 
