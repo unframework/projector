@@ -45,7 +45,7 @@ define ['cs!projectorHtml', 'cs!projectorForm', 'cs!projectorExpr'], (projectorH
             @element 'li', ->
               @element 'a', { href: '#' }, ->
                 @text @tmpl('{{ tab.label }}')
-                @onClick => @tab.activate()
+                @on 'click', => @tab.activate()
 
         @each @eval('tabs'), 'tab', (tabIndex) ->
           @when @eval('tab.active'), ->
@@ -80,12 +80,12 @@ define ['cs!projectorHtml', 'cs!projectorForm', 'cs!projectorExpr'], (projectorH
 
       @element 'a', { href: '#' }, ->
         @text 'Add Item'
-        @onClick => @app.addItem()
+        @on 'click', => @app.addItem()
 
       @element 'a', { href: '#' }, ->
         @text 'Update Item'
-        @onClick => @app.updateItem()
+        @on 'click', => @app.updateItem()
 
       @element 'a', { href: '#' }, ->
         @text 'Remove Item'
-        @onClick => @app.removeItem()
+        @on 'click', => @app.removeItem()

@@ -100,14 +100,20 @@
             textNode = cursor().ownerDocument.createTextNode(v)
             cursor textNode
 
-    viewModel.onClick = (callback) ->
+    viewModel.on = (name, optionsList..., callback) ->
+      options = if optionsList.length then optionsList else {}
+      isPreventDefault = !!options.preventDefault
+
       currentDom = @$projectorHtmlCursor()
-      listener = =>
+      listener = (e) =>
+        if isPreventDefault
+            e.preventDefault()
+
         callback()
         @refresh()
 
       # @todo check if element is being transitioned out
-      currentDom.addEventListener 'click', listener, false
+      currentDom.addEventListener name, listener, false
 
     viewModel.value = () ->
       @$projectorHtmlCursor().value
