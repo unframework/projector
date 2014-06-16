@@ -101,7 +101,7 @@
             cursor textNode
 
     viewModel.on = (name, optionsList..., callback) ->
-      options = if optionsList.length then optionsList else {}
+      options = if optionsList.length then optionsList[0] else {}
       isPreventDefault = !!options.preventDefault
 
       currentDom = @$projectorHtmlCursor()
