@@ -67,11 +67,13 @@
             a[0] + '-' + a[1].toLowerCase()
 
           if typeof attributeGetter is 'function'
-            @watch attributeGetter, (v) ->
-              if v is null
-                childDom.removeAttribute snakeCaseName
-              else
-                childDom.setAttribute snakeCaseName, v
+            ((snakeCaseName) =>
+              @watch attributeGetter, (v) ->
+                if v is null
+                  childDom.removeAttribute snakeCaseName
+                else
+                  childDom.setAttribute snakeCaseName, v
+            )(snakeCaseName)
           else
             childDom.setAttribute snakeCaseName, attributeGetter
 
