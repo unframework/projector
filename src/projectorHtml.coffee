@@ -115,6 +115,9 @@
       # @todo check if element is being transitioned out
       currentDom.addEventListener name, listener, false
 
+    viewModel.html = () ->
+      @$projectorHtmlCursor()
+
     viewModel.value = () ->
       @$projectorHtmlCursor().value
 
