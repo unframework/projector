@@ -1,6 +1,6 @@
 
 (if define? then define else ((module) -> window.projectorHtml = module()))(->
-  install: (viewModel) ->
+  (viewModel) ->
     viewModel.form = (options, actionArgumentList, formSubTemplate) ->
       action = options.action
       fieldGetterMap = {}

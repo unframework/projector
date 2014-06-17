@@ -1,6 +1,6 @@
 
 (if define? then define else ((module) -> window.projectorExpr = module()))(->
-  install: (viewModel) ->
+  (viewModel) ->
     parseExpression = (target, expr) ->
       list = expr.split('.')
 

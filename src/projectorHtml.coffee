@@ -1,6 +1,6 @@
 
 (if define? then define else ((module) -> window.projectorHtml = module()))(->
-  install: (viewModel, onRootElement) ->
+  (viewModel, onRootElement) ->
     # defensive check
     throw 'must supply root element callback' if typeof onRootElement isnt 'function'
 

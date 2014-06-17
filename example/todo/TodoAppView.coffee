@@ -3,14 +3,14 @@ define ['cs!projectorHtml', 'cs!projectorForm', 'cs!projectorExpr'], (projectorH
   ->
     this.app = window.app;
 
-    projectorExpr.install this
+    projectorExpr this
 
-    projectorHtml.install this, (element) ->
+    projectorHtml this, (element) ->
       # immediately append
       # @todo this could be saved for later appending elsewhere, too
       document.getElementById('container').appendChild(element)
 
-    projectorForm.install this
+    projectorForm this
 
     # simple menu view-model
     createMenu = (labelList) ->
