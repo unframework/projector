@@ -178,59 +178,10 @@
     # doing too much guessing otherwise would trip up on cases where item content just changed and "seems" as if something
     # was removed but actually wasn't
     viewModel.each = (expr, itemName, subTemplate) ->
-      listGetter = expr
-      currentDom = @$projectorHtmlCursor()
-      endNode = currentDom.ownerDocument.createComment('...')
-      items = []
-
-      @$projectorHtmlCursor endNode
-
-      loopCursor = createCursor(currentDom, endNode)
-
-      createItemSlot = (index) =>
-        itemStartNode = currentDom.ownerDocument.createComment('^[]')
-        itemEndNode = currentDom.ownerDocument.createComment('$[]')
-        loopCursor itemStartNode
-        loopCursor itemEndNode
-
-        cleanupDom = ->
-          # clear old dom
-          while itemStartNode.nextSibling isnt itemEndNode
-            currentDom.removeChild(itemStartNode.nextSibling)
-
-        # @todo check against nulls
-        scopeDestroy = @scope ->
-          innerScopeDestroy = null
-
-          @watch (-> listGetter()[index]), (v) ->
-            if innerScopeDestroy isnt null
-              innerScopeDestroy()
-
-            cleanupDom()
-
-            innerScopeDestroy = @scope ->
-              this[itemName] = v;
-
-              # assign cursor last to prevent name clash
-              @$projectorHtmlCursor = createCursor(currentDom, itemEndNode)
-
-              subTemplate.call(this, index)
-
-        # provide a cleanup callback
-        () ->
-          scopeDestroy()
-
-          cleanupDom()
-          currentDom.removeChild(itemStartNode)
-          currentDom.removeChild(itemEndNode)
-
-      @watch (-> listGetter().length), (length) ->
-        # add items
-        while items.length < length
-          items.push createItemSlot(items.length)
-
-        # remove items
-        while items.length > length
-          itemCleanup = items.pop()
-          itemCleanup()
+      @region expr, (list) ->
+        if list
+          @list (-> list.length), (itemIndex) ->
+            @region (-> list[itemIndex]), (v) ->
+              this[itemName] = v
+              subTemplate.call(this, itemIndex)
 )
