@@ -130,8 +130,8 @@
       destroy = (->)
 
       currentDom = @$projectorHtmlCursor()
-      startNode = currentDom.ownerDocument.createComment('^' + expr)
-      endNode = currentDom.ownerDocument.createComment('$' + expr)
+      startNode = currentDom.ownerDocument.createComment('^')
+      endNode = currentDom.ownerDocument.createComment('$')
 
       @$projectorHtmlCursor startNode
       @$projectorHtmlCursor endNode
