@@ -150,6 +150,22 @@
           @$projectorHtmlCursor = createCursor(currentDom, endNode)
           subTemplate.call(this, v)
 
+    viewModel.list = (expr, subTemplate) ->
+      itemCount = null
+
+      @watch expr, (v) ->
+        itemCount = v
+
+      # @todo use non-recursive approach
+      createTailTemplate = (itemIndex) ->
+        ->
+          @region (-> itemIndex < itemCount), (v) ->
+            if v
+              @fork -> subTemplate.call(this, itemIndex)
+              createTailTemplate(itemIndex + 1).call(this)
+
+      createTailTemplate(0).call(this)
+
     viewModel.when = (expr, subTemplate) ->
       @region (-> !!expr()), (condition) ->
         if condition
