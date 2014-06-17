@@ -126,8 +126,8 @@
     viewModel.value = () ->
       @$projectorHtmlCursor().value
 
-    viewModel.when = (expr, subTemplate) ->
-      destroy = null
+    viewModel.region = (expr, subTemplate) ->
+      destroy = (->)
 
       currentDom = @$projectorHtmlCursor()
       startNode = currentDom.ownerDocument.createComment('^' + expr)
@@ -138,16 +138,22 @@
 
       # @todo see if this can be made universal? need a hook to destroy immediate children
       # something like onDestroy but does not propagate down to grandchildren
-      @watch (-> !!expr()), (condition) ->
-        if condition
-          destroy = @scope ->
-            @$projectorHtmlCursor = createCursor(currentDom, endNode)
-            subTemplate.call(this)
-        else if destroy isnt null
-          destroy()
+      @watch expr, (v) ->
+        # clean up previous DOM
+        destroy()
 
-          while startNode.nextSibling isnt endNode
-            startNode.parentNode.removeChild startNode.nextSibling # @todo optimize using local vars
+        while startNode.nextSibling isnt endNode
+          startNode.parentNode.removeChild startNode.nextSibling # @todo optimize using local vars
+
+        # set up new DOM
+        destroy = @scope ->
+          @$projectorHtmlCursor = createCursor(currentDom, endNode)
+          subTemplate.call(this, v)
+
+    viewModel.when = (expr, subTemplate) ->
+      @region (-> !!expr()), (condition) ->
+        if condition
+          subTemplate.call(this)
 
     # @todo we can't overthink the array state diff tracking logic (e.g. "item inserted" or "item removed")
     # because ultimately, that sort of event information should come from the model itself
