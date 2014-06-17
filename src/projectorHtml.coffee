@@ -1,5 +1,17 @@
 
 (if define? then define else ((module) -> window.projectorHtml = module()))(->
+  waitForAll = (list, cb) ->
+    doneCount = 0
+
+    wait = ->
+      if list.length > doneCount
+        completion = (-> doneCount += 1; wait(); undefined)
+        list[doneCount].then completion, completion
+      else
+        cb()
+
+    wait()
+
   (viewModel, onRootElement) ->
     # defensive check
     throw 'must supply root element callback' if typeof onRootElement isnt 'function'
@@ -128,6 +140,7 @@
 
     viewModel.region = (expr, subTemplate) ->
       destroy = (->)
+      currentWaitList = []
 
       currentDom = @$projectorHtmlCursor()
       startNode = currentDom.ownerDocument.createComment('^')
@@ -142,11 +155,31 @@
         # clean up previous DOM
         destroy()
 
-        while startNode.nextSibling isnt endNode
-          startNode.parentNode.removeChild startNode.nextSibling # @todo optimize using local vars
+        curNode = startNode
+        destroyedNodes = []
+
+        while curNode.nextSibling isnt endNode
+          curNode = curNode.nextSibling
+          destroyedNodes.push curNode
+
+        waitForAll currentWaitList, ->
+          for node in destroyedNodes
+            node.parentNode.removeChild node
+
+        # move start node over for new content while old content is being deleted
+        startNode.parentNode.insertBefore startNode, endNode
 
         # set up new DOM
+        waitList = currentWaitList = []
+
         destroy = @scope ->
+          @$region = {
+            waitUntil: (promise) ->
+              if promise and promise.then
+                waitList.push promise
+              else
+                throw new Error('expecting a thenable')
+          }
           @$projectorHtmlCursor = createCursor(currentDom, endNode)
           subTemplate.call(this, v)
 
