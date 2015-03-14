@@ -1,7 +1,30 @@
 
 # Projector
 
-## Lean Reactive View Framework
+- business logic state
+    - application state that is relevant outside a specific user interaction (typically in memory or database on the server)
+- user device
+    - web browser or mobile browser
+
+We display business logic state onto the user device. The user decides on what the next command is going to be and we forward it back to business state. This is akin to projection in the math sense (representing a source shape as adapted view, but also possibly running that transformation in reverse).
+
+Design first, optimize later. Imagine a perfect world with infinite CPU power, GPU speed and bandwidth, and zero network lag. There is still a distinct server/client split: because of who gets to control the running code. We trust the server, we don't trust the client. Pretending that the server is just one instance, running in memory, and will never fail, here is our idealized client-side framework code:
+
+```js
+setInterval(function () {
+    // process input
+    queuedUserCommands.forEach(function (command) {
+        someHowInstantlySendCommandToBeAppliedToBusinessState(command);
+    });
+
+    // render resulting state
+    var businessState = someHowInstantlyGetBusinessState();
+
+    representStateOnScreen(businessState);
+}, 10); // 100fps, because why not, in this hypothetical world
+```
+
+## [Older Notes] Lean Reactive View Framework
 
 Simple concept:
 
