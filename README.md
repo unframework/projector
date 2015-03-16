@@ -1,12 +1,40 @@
 
-# Projector
+# Projector (Alpha): Experimental View Framework Build-Along
 
-- business logic state
-    - application state that is relevant outside a specific user interaction (typically in memory or database on the server)
-- user device
+## Goals
+
+Developing application UI on the web is complex. There are a thousand frameworks to choose from and lots of passionate opinion making decisions unclear. That is combined with the fact that we rarely get to join a project before certain technical decisions were already committed to, and the toolset/framework are set in place. But this is not just a historical anomaly.
+
+**User interfaces and user experience are hard to build**. Hundreds of possible device combinations, accessibility, performance optimization, and of course human behaviour being incredibly complex to understand. And business keeps changing, so the UI gets to be tweaked and rewritten many times in an application's lifecycle.
+
+This is important to master, though. Front end is not only the part of the app closest to the user, but also one of the biggest project time sinks, and typically a huge source of bugs and instability.
+
+### View Framework From Scratch
+
+One of the best ways to learn to do something is to build it anew from scratch. See http://www.linuxfromscratch.org/, for example. This is not about NIH or saddling project successors with unproven new code, but gaining foresight and ability to critically evaluate existing frameworks and tools.
+
+Typically, folks learn a toolchain through the "do X in order to get Y" pattern. Incremental, recipe-driven steps. Bang it with a wrench until it works. This is especially true for front-end code, because browser incompatibilities, awkward standards and huge variation in teammate skill level make for a lot of stress and cognitive overload. That obviously does not help see the forest for the trees.
+
+We will start from scratch, but **consider the problem as a whole**.
+
+### Design First, Optimize Later
+
+A lot of complexity in existing code frameworks comes from *optimizations and workarounds*. But not just performance and device support: framework creators have to consider team workflow, existing development infrastructure, existing culture and skillsets of teammates, etc.
+
+We will start with naive assumptions first. That will allow us identify the core skeleton structure of any existing framework, and then tell which design decisions were part of the foundational mental model, and which were technical and social "hacks" that made it work at the time but may no longer be relevant with newer devices and developer demographics.
+
+## Hello World
+
+First, a couple of core definitions:
+
+- **business logic state**
+    - application state that is relevant and persistent outside a specific user interaction (typically in a database on the server)
+- **user device**
     - web browser or mobile browser
 
-We display business logic state onto the user device. The user decides on what the next command is going to be and we forward it back to business state. This is akin to projection in the math sense (representing a source shape as adapted view, but also possibly running that transformation in reverse).
+The app presentation layer displays business logic state onto the user device. The user decides on what the next command is going to be and the presentation layer forwards it back to be applied to business state.
+
+This is akin to *projection* in the math sense (representing a source shape as adapted view, but also possibly running that transformation in reverse). Hence "Projector", by the way.
 
 Design first, optimize later. Imagine a perfect world with infinite CPU power, GPU speed and bandwidth, and zero network lag. There is still a distinct server/client split: because of who gets to control the running code. We trust the server, we don't trust the client. Pretending that the server is just one instance, running in memory, and will never fail, here is our idealized client-side framework code:
 
@@ -24,32 +52,4 @@ setInterval(function () {
 }, 10); // 100fps, because why not, in this hypothetical world
 ```
 
-## [Older Notes] Lean Reactive View Framework
-
-Simple concept:
-
-    model instance + template -> view instance
-
-This library is meant to quickly build views around models and view-models (MVVM) using a template-like DSL.
-
-Features:
-
-* AngularJS style reactive model/scope binding
-* hierarchical (view prototype inheritance), ERB style yield (via callbacks)
-* comfortable syntax: simple, concise real Javascript/CoffeeScript
-* everything is an optional addon, including HTML support (`<canvas>` scenegraph in the works)
-* nothing else
-
-Philosophy:
-
-* lean is better
-  * composition over extension
-  * dependency injection is handled externally (unlike Angular)
-  * no yet-another-templating-language/syntax - just terse JS/CoffeeScript that reads like a template
-  * in general, no explicit dependency on HTML or DOM - although 90% of the useful code is concerned with DOM manipulation
-* fat model, thin template: Mustache/Handlebars-like philosophy, MVVM
-  * declarative/functional glue code is preferred over event-based
-* input/output model binding
-  * data flow: *input* -> *model* -> *view*
-  * *input*: user data, actions, network and timers are fed into the *model* via imperative verb methods
-  * *view*: render last known state of the *model*
+*@todo add more stuff*
