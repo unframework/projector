@@ -1,6 +1,24 @@
 
 # Projector (Alpha): Experimental View Framework Build-Along
 
+## Setup
+
+Some useful utilities to run local JS files in browser:
+
+```sh
+sudo npm install -g browserify beefy
+```
+
+When you save a file called `example.js`, run it like this:
+
+```sh
+beefy example.js
+```
+
+And then point your browser at http://127.0.0.1:9966 to see it.
+
+*@todo: fiddle links*
+
 ## Hello, World!
 
 First, a few core definitions:
