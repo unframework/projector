@@ -73,7 +73,7 @@ var messageCSS = {
 document.body.appendChild(h('div', { style: messageCSS }, 'Hello, world!'));
 ```
 
-Very classy. Note that we didn't have to create any `.css` files yet. We are using CSS styling declarations, but we are simply defining them in the code for now.
+Very classy. Ahem. Note that we didn't have to create any `.css` files yet, and didn't use actual CSS classes. We are using CSS styling declarations, but we are simply defining them in the code and applying to the message DOM element directly for now.
 
 We like refactoring, so we will clean this up a bit:
 
@@ -94,7 +94,7 @@ function renderMessage(text) {
 document.body.appendChild(renderMessage('Hello, world!'));
 ```
 
-Why did we keep the `appendChild` call outside of `renderMessage`? To aid **composition**. This way we can pass output of `renderMessage` through some other function before calling `appendChild` (to e.g. wrap it in a nice shadow) - all without modifying `renderMessage` itself. We have composed the app out of the message renderer as a code module and the consumer of its output (the `appendChild` bit).
+Why did we keep the `appendChild` call outside of `renderMessage`? To aid **composition**. This way we can pass output of `renderMessage` through some other function before calling `appendChild` (e.g. to wrap it in a nice shadow) - all without modifying `renderMessage` itself. We have composed the app out of the message renderer as a code module and the consumer of its output (the `appendChild` bit).
 
 ## To Be Continued
 
