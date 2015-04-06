@@ -48,6 +48,54 @@ document.body.appendChild(h('div', 'Hello, world!'));
 
 Done.
 
+## Adding Styling
+
+Let's make the message box look nice.
+
+Web fonts make an amazing difference. We'll use Google Fonts because they are free and easy to get set up.
+
+```sh
+npm install google-fonts
+```
+
+```js
+var fonts = require('google-fonts');
+var h = require('hyperscript');
+
+fonts.add({ 'Playfair Display': [ '400' ] });
+
+var messageCSS = {
+    'font-family': 'Playfair Display',
+    'font-size': '24px',
+    'color': '#34495e'
+};
+
+document.body.appendChild(h('div', { style: messageCSS }, 'Hello, world!'));
+```
+
+Very classy. Note that we didn't have to create any `.css` files yet. We are using CSS styling declarations, but we are simply defining them in the code for now.
+
+We like refactoring, so we will clean this up a bit:
+
+```js
+var fonts = require('google-fonts');
+var h = require('hyperscript');
+
+fonts.add({ 'Playfair Display': [ '400' ] });
+
+function renderMessage(text) {
+    return h('div', { style: {
+        'font-family': 'Playfair Display',
+        'font-size': '24px',
+        'color': '#34495e'
+    } }, text);
+}
+
+document.body.appendChild(renderMessage('Hello, world!'));
+```
+
+Why did we keep the `appendChild` call outside of `renderMessage`? To aid **composition**. This way we can pass output of `renderMessage` through some other function before calling `appendChild` (to e.g. wrap it in a nice shadow) - all without modifying `renderMessage` itself. We have composed the app out of the message renderer as a code module and the consumer of its output (the `appendChild` bit).
+
 ## Going Deeper
 
 First, a few core definitions:
