@@ -15,11 +15,40 @@ When you save a file called `example.js`, run it like this:
 beefy example.js
 ```
 
-And then point your browser at http://127.0.0.1:9966 to see it.
+And then point your browser at http://127.0.0.1:9966 to see it. If you update the JS file, just hit "Refresh" in the browser to run the latest code.
 
 *@todo: fiddle links*
 
 ## Hello, World!
+
+Any app we build shows some stuff on screen.
+
+```js
+var messageBox = document.createElement('div');
+messageBox.appendChild(document.createText('Hello, world!'));
+
+document.body.appendChild(messageBox);
+```
+
+That works, but is kind of gross. We will use a library called [Hyperscript](https://github.com/dominictarr/hyperscript) to simplify things.
+
+> Note: [jQuery](https://jquery.com/) could also be used, but it is way too much for what we need here. Do [try jQuery](http://learn.jquery.com/) at some point - it's nice!
+
+```sh
+npm install hyperscript
+```
+
+And here is the updated code:
+
+```js
+var h = require('hyperscript');
+
+document.body.appendChild(h('div', 'Hello, world!'));
+```
+
+Done.
+
+## Going Deeper
 
 First, a few core definitions:
 
