@@ -1,5 +1,7 @@
 
-# Projector (Alpha): Experimental View Framework Build-Along
+# Projector: View Framework Build-Along
+
+Let's build a web view framework from scratch! And learn something along the way.
 
 ## Setup
 
