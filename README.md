@@ -126,10 +126,10 @@ function renderButton(text, clickHandler) {
 }
 
 function renderAll() {
-    return h('div', renderMessage('Hello, world!'), renderButton('Click Me', function () {
+    return h('div', [ renderMessage('Hello, world!'), renderButton('Click Me', function () {
         counter += 1;
         console.log('counter value: ' + counter);
-    }));
+    }) ]);
 }
 
 document.body.appendChild(renderAll());
@@ -167,9 +167,9 @@ function renderButton(text, clickHandler) {
 }
 
 function renderAll() {
-    return h('div', { id: 'ui' }, renderMessage('Counter value: ' + counter), renderButton('Click Me', function () {
+    return h('div', { id: 'ui' }, [ renderMessage('Counter value: ' + counter), renderButton('Click Me', function () {
         counter += 1;
-    }));
+    }) ]);
 }
 
 document.body.appendChild(renderAll());
@@ -180,7 +180,60 @@ document.body.addEventListener('click', function () {
 
 The UI gets replaced even on clicks *outside* the button (i.e. when the counter doesn't change). Is that a problem? Not really, since it happens fast enough and with no side effects. Any code we write to optimize that case is going to complicate the logic and create chances for bugs to happen.
 
-But there is a side effect, actually. Because we replace the entire UI, nice things like keyboard focus on the button get completely cleared out!
+But there is a side effect, actually. Because we replace the entire UI, nice things like keyboard focus on the button get completely cleared out! Also, if we were to build out a huge complex application screen, replacing the entire thing on every little click would get very slow. This is where things get complex. Or do they?
+
+## Virtual DOM
+
+There is a way to do a "soft replace" on DOM elements that is both faster and less destructive. Instead creating real (heavy) DOM element in our `render` functions, we can generate so-called "virtual DOM". Actually, our code will look exactly the same (since we use inline Hyperscript syntax), but now we can pipe the results through a special optimizer that does the soft-replacement.
+
+```sh
+npm install virtual-dom
+```
+
+```js
+var fonts = require('google-fonts');
+var h = require('virtual-dom/h');
+
+var counter = 0;
+
+fonts.add({ 'Playfair Display': [ '400' ] });
+
+function renderMessage(text) {
+    return h('div', { style: {
+        'font': '24px Playfair Display',
+        'color': '#34495e'
+    } }, text);
+}
+
+function renderButton(text, clickHandler) {
+    return h('button', { style: {
+        'font': '16px Playfair Display',
+        'background': '#2ecc71', 'color': '#fff',
+        'border-radius': '3px', 'border': 'none'
+    }, onclick: clickHandler }, text);
+}
+
+function renderAll() {
+    return h('div', { id: 'ui' }, [ renderMessage('Counter value: ' + counter), renderButton('Click Me', function () {
+        counter += 1;
+    }) ]);
+}
+
+var diff = require('virtual-dom/diff');
+var patch = require('virtual-dom/patch');
+var createElement = require('virtual-dom/create-element');
+
+var ui = renderAll();
+document.body.appendChild(createElement(ui));
+document.body.addEventListener('click', function () {
+    var oldUI = ui;
+    patch(document.getElementById('ui'), diff(oldUI, ui = renderAll()));
+});
+```
+
+That was easy: the only changes we made was include `virtual-dom/h` instead of `hyperscript` (to generate virtual DOM instead of real DOM), and complicate the DOM replacement step.
+
+How it works now is this: we always keep a reference to the previous rendered virtual DOM, and then on every refresh the optimizer simply walks through *differences* between the new and previous virtual DOM trees (that's what `diff` computes) and then applies a `patch` to the real browser DOM. It's simpler than it sounds, and we can pretty much forget about these nitty-gritty details from now on.
 
 ## To Be Continued
 
