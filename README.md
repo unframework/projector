@@ -67,8 +67,7 @@ var h = require('hyperscript');
 fonts.add({ 'Playfair Display': [ '400' ] });
 
 var messageCSS = {
-    'font-family': 'Playfair Display',
-    'font-size': '24px',
+    'font': '24px Playfair Display',
     'color': '#34495e'
 };
 
@@ -87,8 +86,7 @@ fonts.add({ 'Playfair Display': [ '400' ] });
 
 function renderMessage(text) {
     return h('div', { style: {
-        'font-family': 'Playfair Display',
-        'font-size': '24px',
+        'font': '24px Playfair Display',
         'color': '#34495e'
     } }, text);
 }
@@ -97,6 +95,92 @@ document.body.appendChild(renderMessage('Hello, world!'));
 ```
 
 Why did we keep the `appendChild` call outside of `renderMessage`? To aid **composition**. This way we can pass output of `renderMessage` through some other function before calling `appendChild` (e.g. to wrap it in a nice shadow) - all without modifying `renderMessage` itself. We have composed the app out of the message renderer as a code module and the consumer of its output (the `appendChild` bit).
+
+## Interaction
+
+So far all we have is just some text on a page. Real apps allow for interaction: user input.
+
+Let's add a button that increments a counter.
+
+```js
+var fonts = require('google-fonts');
+var h = require('hyperscript');
+
+var counter = 0;
+
+fonts.add({ 'Playfair Display': [ '400' ] });
+
+function renderMessage(text) {
+    return h('div', { style: {
+        'font': '24px Playfair Display',
+        'color': '#34495e'
+    } }, text);
+}
+
+function renderButton(text, clickHandler) {
+    return h('button', { style: {
+        'font': '16px Playfair Display',
+        'background': '#2ecc71', 'color': '#fff',
+        'border-radius': '3px', 'border': 'none'
+    }, onclick: clickHandler }, text);
+}
+
+function renderAll() {
+    return h('div', renderMessage('Hello, world!'), renderButton('Click Me', function () {
+        counter += 1;
+        console.log('counter value: ' + counter);
+    }));
+}
+
+document.body.appendChild(renderAll());
+```
+
+The counter in this case is the so-called "application state", and the button translates user actions (clicks) into meaningful operations on the application state (incrementing the counter).
+
+It is important to mentally mark application state variables and code as distinct from everything else. Rendering stuff on screen usually means a lot of style-dependent code, so keeping it separate from application code means easier editing and maintenance.
+
+We need to show the counter value on screen, instead of the log. We can do that by just replacing the `'Hello, world!'` string with `'Counter:'' + counter` of course. But when the counter changes, what do we do then? We simply render new UI.
+
+But how do we know when the counter changes? The answer to that is laughably simple: when the user clicks anything! It makes sense: our program state only changes when something external "nudges it along". We will simply listen for all the clicks that ever happen and update the screen.
+
+```js
+var fonts = require('google-fonts');
+var h = require('hyperscript');
+
+var counter = 0;
+
+fonts.add({ 'Playfair Display': [ '400' ] });
+
+function renderMessage(text) {
+    return h('div', { style: {
+        'font': '24px Playfair Display',
+        'color': '#34495e'
+    } }, text);
+}
+
+function renderButton(text, clickHandler) {
+    return h('button', { style: {
+        'font': '16px Playfair Display',
+        'background': '#2ecc71', 'color': '#fff',
+        'border-radius': '3px', 'border': 'none'
+    }, onclick: clickHandler }, text);
+}
+
+function renderAll() {
+    return h('div', { id: 'ui' }, renderMessage('Counter value: ' + counter), renderButton('Click Me', function () {
+        counter += 1;
+    }));
+}
+
+document.body.appendChild(renderAll());
+document.body.addEventListener('click', function () {
+    document.body.replaceChild(renderAll(), document.getElementById('ui'));
+});
+```
+
+The UI gets replaced even on clicks *outside* the button (i.e. when the counter doesn't change). Is that a problem? Not really, since it happens fast enough and with no side effects. Any code we write to optimize that case is going to complicate the logic and create chances for bugs to happen.
+
+But there is a side effect, actually. Because we replace the entire UI, nice things like keyboard focus on the button get completely cleared out!
 
 ## To Be Continued
 
