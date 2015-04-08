@@ -27,7 +27,7 @@ Any app we build shows some stuff on screen.
 
 ```js
 var messageBox = document.createElement('div');
-messageBox.appendChild(document.createText('Hello, world!'));
+messageBox.appendChild(document.createTextNode('Hello, world!'));
 
 document.body.appendChild(messageBox);
 ```
@@ -74,7 +74,7 @@ var messageCSS = {
 document.body.appendChild(h('div', { style: messageCSS }, 'Hello, world!'));
 ```
 
-Very classy. Ahem. Note that we didn't have to create any `.css` files yet, and didn't use actual CSS classes. We are using CSS styling declarations, but we are simply defining them in the code and applying to the message DOM element directly for now.
+Very classy. Ahem. Note that we didn't have to create any `.css` files yet, and didn't use actual CSS classes. We are using CSS styling declarations, but by simply defining them in the code and applying to the message DOM element directly for now.
 
 We like refactoring, so we will clean this up a bit:
 
@@ -139,7 +139,7 @@ The counter in this case is the so-called "application state", and the button tr
 
 It is important to mentally mark application state variables and code as distinct from everything else. Rendering stuff on screen usually means a lot of style-dependent code, so keeping it separate from application code means easier editing and maintenance.
 
-We need to show the counter value on screen, instead of the log. We can do that by just replacing the `'Hello, world!'` string with `'Counter:'' + counter` of course. But when the counter changes, what do we do then? We simply render new UI.
+We need to show the counter value on screen, instead of the log. We can do that by just replacing the `'Hello, world!'` string with `'Counter:' + counter` of course. But when the counter changes, what do we do then? We simply render new UI.
 
 But how do we know when the counter changes? The answer to that is laughably simple: when the user clicks anything! It makes sense: our program state only changes when something external "nudges it along". We will simply listen for all the clicks that ever happen and update the screen.
 
