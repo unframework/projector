@@ -1,7 +1,7 @@
-
-# Projector: View Framework Build-Along
-
-Let's build a web view framework from scratch! And learn something along the way.
+---
+layout: post
+title: Hello World and Virtual DOM
+---
 
 ## Setup
 
