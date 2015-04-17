@@ -12,3 +12,5 @@ author:
   name:           Nick Matantsev
   url:            https://twitter.com/unframework
   email:          nick.matantsev@gmail.com
+
+markdown: redcarpet
