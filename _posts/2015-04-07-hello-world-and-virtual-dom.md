@@ -234,10 +234,3 @@ document.body.addEventListener('click', function () {
 That was easy: the only changes we made was include `virtual-dom/h` instead of `hyperscript` (to generate virtual DOM instead of real DOM), and complicate the DOM replacement step.
 
 How it works now is this: we always keep a reference to the previous rendered virtual DOM, and then on every refresh the optimizer simply walks through *differences* between the new and previous virtual DOM trees (that's what `diff` computes) and then applies a `patch` to the real browser DOM. It's simpler than it sounds, and we can pretty much forget about these nitty-gritty details from now on.
-
-## To Be Continued
-
-*@todo add more stuff*
-
-Some background information about the repo is in the [contribution guidelines](CONTRIBUTING.md).
-
