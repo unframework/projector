@@ -5,9 +5,9 @@ relative_permalinks: true
 # Setup
 title:            Projector Tutorial
 tagline:          View Framework Build-Along
-url:              https://unframework.github.io/projector
+url:              https://unframework.github.io/projector/
 paginate:         10
-baseurl:          /
+baseurl:          /projector
 author:
   name:           Nick Matantsev
   url:            https://twitter.com/unframework
