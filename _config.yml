@@ -1,0 +1,14 @@
+# Permalinks
+permalink:        pretty
+relative_permalinks: true
+
+# Setup
+title:            Projector Tutorial
+tagline:          View Framework Build-Along
+url:              http://unframework.github.io/projector
+paginate:         1
+baseurl:          /
+author:
+  name:           Nick Matantsev
+  url:            https://twitter.com/unframework
+  email:          nick.matantsev@gmail.com
